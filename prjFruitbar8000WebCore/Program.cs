@@ -1,7 +1,10 @@
+using prjFruitbar8000WebCore.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddDbContext<FruitBarDbv15Context>();
 
 var app = builder.Build();
 

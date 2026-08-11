@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace prjFruitbar8000WebCore.Models;
+﻿namespace prjFruitbar8000WebCore.Models;
 
 public partial class TArtistsSong
 {
