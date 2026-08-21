@@ -1,14 +1,16 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 namespace prjFruitbar8000WebCore.Models;
 
-public partial class FruitBarDbv15Context : DbContext
+public partial class FruitBarDbContext : DbContext
 {
-    public FruitBarDbv15Context()
+    public FruitBarDbContext()
     {
     }
 
-    public FruitBarDbv15Context(DbContextOptions<FruitBarDbv15Context> options)
+    public FruitBarDbContext(DbContextOptions<FruitBarDbContext> options)
         : base(options)
     {
     }
@@ -30,8 +32,7 @@ public partial class FruitBarDbv15Context : DbContext
     public virtual DbSet<TSongsAlbum> TSongsAlbums { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=.;Database=FruitBarDBv15;Trusted_Connection=True;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Name=ConnectionStrings:FruitBarDB");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

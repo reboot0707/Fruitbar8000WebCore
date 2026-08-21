@@ -1,4 +1,7 @@
-﻿namespace prjFruitbar8000WebCore.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace prjFruitbar8000WebCore.Models;
 
 public partial class TSongGenre
 {

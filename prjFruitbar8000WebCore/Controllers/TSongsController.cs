@@ -11,9 +11,9 @@ namespace prjFruitbar8000WebCore.Controllers
 {
     public class TSongsController : Controller
     {
-        private readonly FruitBarDbv15Context _context;
+        private readonly FruitBarDbContext _context;
 
-        public TSongsController(FruitBarDbv15Context context)
+        public TSongsController(FruitBarDbContext context)
         {
             _context = context;
         }
