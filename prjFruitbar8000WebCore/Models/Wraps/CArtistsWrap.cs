@@ -29,7 +29,7 @@ public class CArtistsWrap
         set { _tartist.FArtistId = value; }
     }
 
-    [DisplayName("歌手名稱")]
+    [DisplayName("創作者名稱")]
     public string FArtistName
     {
         get { return _tartist.FArtistName; }
@@ -42,7 +42,7 @@ public class CArtistsWrap
         set { _tartist.FIsDeleted = value; }
     }
 
-    [DisplayName("歌手類型")]
+    [DisplayName("創作者類型")]
     public string? FArtistType
     {
         get { return _tartist.FArtistType; }

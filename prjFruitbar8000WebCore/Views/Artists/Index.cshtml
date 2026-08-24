@@ -1,13 +1,13 @@
 @model IEnumerable<prjFruitbar8000WebCore.Models.Wraps.CArtistsWrap>
 
 @{
-    ViewData["Title"] = "歌手清單";
+    ViewData["Title"] = "創作者清單";
 }
 
-<h1>歌手清單</h1>
+<h1>創作者清單</h1>
 
 <p>
-    <a asp-action="Create">新增歌手</a>
+    <a asp-action="Create">新增創作者</a>
 </p>
 
 <table class="table">
@@ -27,7 +27,7 @@
                 <td>
                     <a asp-action="Edit" asp-route-id="@item.FArtistId">編輯</a> |
                     <a asp-action="Delete" asp-route-id="@item.FArtistId"
-                       onclick="return confirm('確定要永久刪除這位歌手嗎？');">刪除</a>
+                       onclick="return confirm('確定要永久刪除這位創作者嗎？');">刪除</a>
                 </td>
             </tr>
         }
