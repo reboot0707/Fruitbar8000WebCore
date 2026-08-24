@@ -97,6 +97,26 @@ namespace prjFruitbar8000WebCore.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            TSong? resultNow = await _context.TSongs.FirstOrDefaultAsync(x => x.FSongId == id);
+
+            if (resultNow == null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            _context.Remove(resultNow);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
         private bool TSongExists(int? fsongid)
         {
             return _context.TSongs.Any(e => e.FSongId == fsongid);
