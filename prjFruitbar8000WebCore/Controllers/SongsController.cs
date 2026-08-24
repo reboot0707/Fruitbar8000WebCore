@@ -71,7 +71,7 @@ namespace prjFruitbar8000WebCore.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit([Bind("FSongName,FLyrics,FDuration")] CSongsWrap sw)
+        public async Task<IActionResult> Edit([Bind("FSongId,FSongName,FLyrics,FDuration")] CSongsWrap sw)
         {
             var updatedsongdata = sw.tsong;
             if (updatedsongdata == null || !ModelState.IsValid)
