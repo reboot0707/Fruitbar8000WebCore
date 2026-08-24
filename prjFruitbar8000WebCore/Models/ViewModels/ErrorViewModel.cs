@@ -1,4 +1,4 @@
-namespace prjFruitbar8000WebCore.Models
+namespace prjFruitbar8000WebCore.Models.ViewModels
 {
     public class ErrorViewModel
     {
