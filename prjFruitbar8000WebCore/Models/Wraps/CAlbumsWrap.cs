@@ -29,5 +29,33 @@ public class CAlbumsWrap
         set { _talbum.FAlbumId = value; }
     }
 
-    // TODO: 依照 FAlbumId 完成剩下的 TAlbum <--> CAlbumsWrap 對應屬性, 導覽屬性應該先不用
+    public string FAlbumName
+    {
+        get { return _talbum.FAlbumName; }
+        set { _talbum.FAlbumName = value; }
+    }
+
+    public bool FIsDeleted
+    {
+        get { return _talbum.FIsDeleted; }
+        set { _talbum.FIsDeleted = value; }
+    }
+
+    public DateOnly? FReleaseDate
+    {
+        get { return _talbum.FReleaseDate; }
+        set { _talbum.FReleaseDate = value; }
+    }
+
+    public byte[]? FCoverPic
+    {
+        get { return _talbum.FCoverPic; }
+        set { _talbum.FCoverPic = value; }
+    }
+
+    public string? FAlbumType
+    {
+        get { return _talbum.FAlbumType; }
+        set { _talbum.FAlbumType = value; }
+    }
 }
