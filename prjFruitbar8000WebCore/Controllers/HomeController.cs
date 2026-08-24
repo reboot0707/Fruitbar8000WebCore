@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using prjFruitbar8000WebCore.Models;
+using prjFruitbar8000WebCore.Models.ViewModels;
 using System.Diagnostics;
 
 namespace prjFruitbar8000WebCore.Controllers
