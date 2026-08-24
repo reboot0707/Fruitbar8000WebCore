@@ -78,9 +78,28 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return View(sw);
             }
-            _context.Update(updatedsongdata);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Update(updatedsongdata);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TSongExists(updatedsongdata.FSongId))
+                {
+                    return View(sw);
+                }
+                else
+                {
+                    throw;
+                }
+            }
             return RedirectToAction(nameof(Index));
+        }
+
+        private bool TSongExists(int? fsongid)
+        {
+            return _context.TSongs.Any(e => e.FSongId == fsongid);
         }
     }
 }
