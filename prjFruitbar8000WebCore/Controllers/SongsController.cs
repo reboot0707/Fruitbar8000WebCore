@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models;
+using prjFruitbar8000WebCore.Models.Entities;
 using prjFruitbar8000WebCore.Models.Wraps;
 
 namespace prjFruitbar8000WebCore.Controllers
@@ -44,6 +45,41 @@ namespace prjFruitbar8000WebCore.Controllers
             _context.Add(newsongdata);
             await _context.SaveChangesAsync();
 
+            return RedirectToAction(nameof(Index));
+        }
+
+
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            TSong? resultNow = await _context.TSongs.FirstOrDefaultAsync(x => x.FSongId == id);
+
+            if (resultNow == null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var resultNowShow = new CSongsWrap()
+            {
+                tsong = resultNow
+            };
+            return View(resultNowShow);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit([Bind("FSongName,FLyrics,FDuration")] CSongsWrap sw)
+        {
+            var updatedsongdata = sw.tsong;
+            if (updatedsongdata == null || !ModelState.IsValid)
+            {
+                return View(sw);
+            }
+            _context.Update(updatedsongdata);
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
     }
