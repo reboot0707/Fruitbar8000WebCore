@@ -1,0 +1,71 @@
+@model IEnumerable<prjFruitbar8000WebCore.Models.Entities.TSong>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.FSongName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.FIsDeleted)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.FLyrics)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.FDuration)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.TArtistsSongs)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.TSongGenres)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.TSongsAlbums)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(model => item.FSongName)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.FIsDeleted)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.FLyrics)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.FDuration)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.TArtistsSongs)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.TSongGenres)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.TSongsAlbums)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.FSongId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.FSongId">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.FSongId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

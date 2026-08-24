@@ -1,0 +1,64 @@
+@model prjFruitbar8000WebCore.Models.Entities.TSong
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>TSong</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="FSongId" />
+            <div class="form-group">
+                <label asp-for="FSongName" class="control-label"></label>
+                <input asp-for="FSongName" class="form-control" />
+                <span asp-validation-for="FSongName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FIsDeleted" class="control-label"></label>
+                <input asp-for="FIsDeleted" class="form-check-input" />
+                <span asp-validation-for="FIsDeleted" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FLyrics" class="control-label"></label>
+                <input asp-for="FLyrics" class="form-control" />
+                <span asp-validation-for="FLyrics" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FDuration" class="control-label"></label>
+                <input asp-for="FDuration" class="form-control" />
+                <span asp-validation-for="FDuration" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TArtistsSongs" class="control-label"></label>
+                <input asp-for="TArtistsSongs" class="form-control" />
+                <span asp-validation-for="TArtistsSongs" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TSongGenres" class="control-label"></label>
+                <input asp-for="TSongGenres" class="form-control" />
+                <span asp-validation-for="TSongGenres" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TSongsAlbums" class="control-label"></label>
+                <input asp-for="TSongsAlbums" class="form-control" />
+                <span asp-validation-for="TSongsAlbums" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
