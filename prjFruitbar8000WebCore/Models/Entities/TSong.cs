@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace prjFruitbar8000WebCore.Models.Entities;
 
 public partial class TSong
 {
+    [Key]
     public int FSongId { get; set; }
 
     public string FSongName { get; set; } = null!;
