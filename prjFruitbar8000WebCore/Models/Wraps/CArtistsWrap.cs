@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using prjFruitbar8000WebCore.Models.Entities;
 
 namespace prjFruitbar8000WebCore.Models.Wraps;
@@ -28,6 +29,7 @@ public class CArtistsWrap
         set { _tartist.FArtistId = value; }
     }
 
+    [DisplayName("歌手名稱")]
     public string FArtistName
     {
         get { return _tartist.FArtistName; }
@@ -40,6 +42,7 @@ public class CArtistsWrap
         set { _tartist.FIsDeleted = value; }
     }
 
+    [DisplayName("歌手類型")]
     public string? FArtistType
     {
         get { return _tartist.FArtistType; }

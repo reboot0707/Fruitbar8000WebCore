@@ -1,0 +1,39 @@
+@model prjFruitbar8000WebCore.Models.Wraps.CArtistsWrap
+
+@{
+    ViewData["Title"] = "新增歌手";
+}
+
+<h1>新增歌手</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="FArtistName" class="control-label"></label>
+                <input asp-for="FArtistName" class="form-control" />
+                <span asp-validation-for="FArtistName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FArtistType" class="control-label"></label>
+                <input asp-for="FArtistType" class="form-control" />
+                <span asp-validation-for="FArtistType" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="新增" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">回到歌手清單</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

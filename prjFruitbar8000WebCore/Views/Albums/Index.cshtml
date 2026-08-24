@@ -1,0 +1,37 @@
+@model IEnumerable<prjFruitbar8000WebCore.Models.Wraps.CAlbumsWrap>
+
+@{
+    ViewData["Title"] = "專輯清單";
+}
+
+<h1>專輯清單</h1>
+
+<p>
+    <a asp-action="Create">新增專輯</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(model => model.FAlbumName)</th>
+            <th>@Html.DisplayNameFor(model => model.FReleaseDate)</th>
+            <th>@Html.DisplayNameFor(model => model.FAlbumType)</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.FAlbumName)</td>
+                <td>@Html.DisplayFor(modelItem => item.FReleaseDate)</td>
+                <td>@Html.DisplayFor(modelItem => item.FAlbumType)</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.FAlbumId">編輯</a> |
+                    <a asp-action="Delete" asp-route-id="@item.FAlbumId"
+                       onclick="return confirm('確定要永久刪除這張專輯嗎？');">刪除</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
