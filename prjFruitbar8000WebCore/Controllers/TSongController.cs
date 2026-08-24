@@ -14,21 +14,21 @@ public class TSongController : Controller
     }
 
     // GET: TSONGS
-    public async Task<IActionResult> Index()    
+    public async Task<IActionResult> Index()
     {
         return View(await _context.TSongs.ToListAsync());
     }
 
     // GET: TSONGS/Details/5
-    public async Task<IActionResult> Details(int? fsongid)
+    public async Task<IActionResult> Details(int? id)
     {
-        if (fsongid == null)
+        if (id == null)
         {
             return NotFound();
         }
 
         var tsong = await _context.TSongs
-            .FirstOrDefaultAsync(m => m.FSongId == fsongid);
+            .FirstOrDefaultAsync(m => m.FSongId == id);
         if (tsong == null)
         {
             return NotFound();
@@ -60,14 +60,14 @@ public class TSongController : Controller
     }
 
     // GET: TSONGS/Edit/5
-    public async Task<IActionResult> Edit(int? fsongid)
+    public async Task<IActionResult> Edit(int? id)
     {
-        if (fsongid == null)
+        if (id == null)
         {
             return NotFound();
         }
 
-        var tsong = await _context.TSongs.FindAsync(fsongid);
+        var tsong = await _context.TSongs.FindAsync(id);
         if (tsong == null)
         {
             return NotFound();
@@ -80,9 +80,9 @@ public class TSongController : Controller
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int? fsongid, [Bind("FSongId,FSongName,FIsDeleted,FLyrics,FDuration,TArtistsSongs,TSongGenres,TSongsAlbums")] TSong tsong)
+    public async Task<IActionResult> Edit(int? id, [Bind("FSongId,FSongName,FIsDeleted,FLyrics,FDuration,TArtistsSongs,TSongGenres,TSongsAlbums")] TSong tsong)
     {
-        if (fsongid != tsong.FSongId)
+        if (id != tsong.FSongId)
         {
             return NotFound();
         }
@@ -111,15 +111,15 @@ public class TSongController : Controller
     }
 
     // GET: TSONGS/Delete/5
-    public async Task<IActionResult> Delete(int? fsongid)
+    public async Task<IActionResult> Delete(int? id)
     {
-        if (fsongid == null)
+        if (id == null)
         {
             return NotFound();
         }
 
         var tsong = await _context.TSongs
-            .FirstOrDefaultAsync(m => m.FSongId == fsongid);
+            .FirstOrDefaultAsync(m => m.FSongId == id);
         if (tsong == null)
         {
             return NotFound();
@@ -131,9 +131,9 @@ public class TSongController : Controller
     // POST: TSONGS/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int? fsongid)
+    public async Task<IActionResult> DeleteConfirmed(int? id)
     {
-        var tsong = await _context.TSongs.FindAsync(fsongid);
+        var tsong = await _context.TSongs.FindAsync(id);
         if (tsong != null)
         {
             _context.TSongs.Remove(tsong);
