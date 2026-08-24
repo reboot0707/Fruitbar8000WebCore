@@ -1,0 +1,41 @@
+@model prjFruitbar8000WebCore.Models.Wraps.CSongsWrap
+
+@{
+    ViewData["Title"] = "新增曲目";
+}
+
+<h1>新增曲目</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group">
+                <label asp-for="FSongName" class="control-label"></label>
+                <input asp-for="FSongName" class="form-control" />
+                <span asp-validation-for="FSongName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="FLyrics" class="control-label"></label>
+                <input asp-for="FLyrics" class="form-control" />
+                <span asp-validation-for="FLyrics" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="FDuration" class="control-label"></label>
+                <input asp-for="FDuration" class="form-control" />
+                <span asp-validation-for="FDuration" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>

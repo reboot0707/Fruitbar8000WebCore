@@ -23,5 +23,24 @@ namespace prjFruitbar8000WebCore.Controllers
 
             return View(songslist);
         }
+
+        public async Task<IActionResult> Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(CSongsWrap sw)
+        {
+            var newsongdata = sw.tsong;
+            if (newsongdata == null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            _context.Add(newsongdata);
+            _context.SaveChanges();
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
