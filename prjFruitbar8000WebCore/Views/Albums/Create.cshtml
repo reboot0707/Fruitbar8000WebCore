@@ -1,0 +1,44 @@
+@model prjFruitbar8000WebCore.Models.Wraps.CAlbumsWrap
+
+@{
+    ViewData["Title"] = "新增專輯";
+}
+
+<h1>新增專輯</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="FAlbumName" class="control-label"></label>
+                <input asp-for="FAlbumName" class="form-control" />
+                <span asp-validation-for="FAlbumName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FReleaseDate" class="control-label"></label>
+                <input asp-for="FReleaseDate" class="form-control" type="date" />
+                <span asp-validation-for="FReleaseDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FAlbumType" class="control-label"></label>
+                <input asp-for="FAlbumType" class="form-control" />
+                <span asp-validation-for="FAlbumType" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="新增" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">回到專輯清單</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,7 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using prjFruitbar8000WebCore.Models.Entities;
 
-namespace prjFruitbar8000WebCore;
+namespace prjFruitbar8000WebCore.Models.Wraps;
 
 public class CAlbumsWrap
 {
@@ -29,6 +30,7 @@ public class CAlbumsWrap
         set { _talbum.FAlbumId = value; }
     }
 
+    [DisplayName("專輯名稱")]
     public string FAlbumName
     {
         get { return _talbum.FAlbumName; }
@@ -41,6 +43,7 @@ public class CAlbumsWrap
         set { _talbum.FIsDeleted = value; }
     }
 
+    [DisplayName("發行日期")]
     public DateOnly? FReleaseDate
     {
         get { return _talbum.FReleaseDate; }
@@ -53,6 +56,7 @@ public class CAlbumsWrap
         set { _talbum.FCoverPic = value; }
     }
 
+    [DisplayName("專輯類型")]
     public string? FAlbumType
     {
         get { return _talbum.FAlbumType; }
