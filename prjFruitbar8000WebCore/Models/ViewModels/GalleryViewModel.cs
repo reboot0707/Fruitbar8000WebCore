@@ -2,7 +2,7 @@
 
 namespace prjFruitbar8000WebCore.Models.ViewModels;
 
-public class QueryViewModel
+public class GalleryViewModel
 {
     public int id { get; set; }
     [DisplayName("樂曲名稱")]

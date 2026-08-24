@@ -5,19 +5,24 @@ using prjFruitbar8000WebCore.Models.ViewModels;
 
 namespace prjFruitbar8000WebCore.Controllers
 {
-    public class QueryController : Controller
+    public class GalleryController : Controller
     {
         private readonly FruitBarDbContext _context;
-        public QueryController(FruitBarDbContext context)
+        public GalleryController(FruitBarDbContext context)
         {
             _context = context;
         }
 
+        public IActionResult Index()
+        {
+            return RedirectToAction(nameof(List));
+        }
+
         // GET: QueryController
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> List()
         {
             // 修改前作邏輯, 參考某音樂平台, 先用專輯為單位列表
-            List<QueryViewModel> querylistview = new List<QueryViewModel>();
+            List<GalleryViewModel> querylistview = new List<GalleryViewModel>();
 
             var songlistq = _context.TSongs.Select(x => new
             {
@@ -33,7 +38,7 @@ namespace prjFruitbar8000WebCore.Controllers
                 {
                     foreach (var songartist in song.ArtistNames)
                     {
-                        QueryViewModel qvm = new QueryViewModel()
+                        GalleryViewModel qvm = new GalleryViewModel()
                         {
                             SongName = song.SongName,
                             ArtistName = songartist,
@@ -44,6 +49,11 @@ namespace prjFruitbar8000WebCore.Controllers
                 }
             }
             return View(querylistview);
+        }
+
+        public IActionResult Create()
+        {
+            return View();
         }
     }
 }
