@@ -1,9 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using prjFruitbar8000WebCore.Models.Entities;
 
 namespace prjFruitbar8000WebCore.Models.Wraps;
 
-public class CSongWrap
+public class CSongsWrap
 {
     private TSong _tsong;
 
@@ -13,12 +14,12 @@ public class CSongWrap
         set { _tsong = value; }
     }
 
-    public CSongWrap()
+    public CSongsWrap()
     {
         _tsong = new TSong();
     }
 
-    public CSongWrap(TSong tsong)
+    public CSongsWrap(TSong tsong)
     {
         _tsong = tsong;
     }
@@ -30,6 +31,7 @@ public class CSongWrap
         set { _tsong.FSongId = value; }
     }
 
+    [DisplayName("歌曲名稱")]
     public string FSongName
     {
         get { return _tsong.FSongName; }
@@ -42,12 +44,14 @@ public class CSongWrap
         set { _tsong.FIsDeleted = value; }
     }
 
+    [DisplayName("歌詞")]
     public string? FLyrics
     {
         get { return _tsong.FLyrics; }
         set { _tsong.FLyrics = value; }
     }
 
+    [DisplayName("歌曲長度(秒)")]
     public int? FDuration
     {
         get { return _tsong.FDuration; }
