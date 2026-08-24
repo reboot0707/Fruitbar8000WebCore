@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.Wraps;
 
@@ -19,26 +20,29 @@ namespace prjFruitbar8000WebCore.Controllers
             var qs = _context.TSongs;
             List<CSongsWrap> songslist = new List<CSongsWrap>() { };
 
-            songslist = qs.Select(x => new CSongsWrap(x)).ToList();
+            songslist = await qs.Select(x => new CSongsWrap(x)).ToListAsync();
 
             return View(songslist);
         }
 
-        public async Task<IActionResult> Create()
+        public IActionResult Create()
         {
             return View();
         }
 
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see https://learn.microsoft.com/zh-tw/aspnet/mvc/overview/getting-started/getting-started-with-ef-using-mvc/implementing-basic-crud-functionality-with-the-entity-framework-in-asp-net-mvc-application#overpost.
         [HttpPost]
-        public async Task<IActionResult> Create(CSongsWrap sw)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create([Bind("FSongName,FLyrics,FDuration")] CSongsWrap sw)
         {
             var newsongdata = sw.tsong;
-            if (newsongdata == null)
+            if (newsongdata == null || !ModelState.IsValid)
             {
-                return RedirectToAction(nameof(Index));
+                return View(sw);
             }
             _context.Add(newsongdata);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
