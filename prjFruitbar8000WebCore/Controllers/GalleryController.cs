@@ -139,6 +139,62 @@ namespace prjFruitbar8000WebCore.Controllers
             _context.SaveChanges();
             return RedirectToAction(nameof(List));
         }
+
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id is null)
+            {
+                return RedirectToAction(nameof(List));
+            }
+            var selListArtist = _context.TArtists
+                .OrderBy(x => x.FArtistName)
+                .Select(x => new SelectListItem()
+                {
+                    Value = x.FArtistId.ToString(),
+                    Text = x.FArtistName
+                }).ToList();
+            var selListAlbum = _context.TAlbums
+                .OrderBy(x => x.FAlbumName)
+                .Select(x => new SelectListItem()
+                {
+                    Value = x.FAlbumId.ToString(),
+                    Text = x.FAlbumName
+                }).ToList();
+            var editSong = await _context.TSongs
+                .Where(x => x.FSongId == id)
+                .Include(x => x.TArtistsSongs)
+                .Include(x => x.TSongsAlbums)
+                .FirstOrDefaultAsync();
+            if (editSong is null)
+            {
+                return RedirectToAction(nameof(List));
+            }
+            var artistsIdOfSong = editSong.TArtistsSongs.Select(x => x.FArtistId).ToList();
+            var albumsIdOfSong = editSong.TSongsAlbums.Select(x => x.FAlbumId).ToList();
+
+
+            var seletedArtists = selListArtist.Where(x => artistsIdOfSong.Contains(int.Parse(x.Value)));
+            var selectedAlbums = selListAlbum.Where(x => albumsIdOfSong.Contains(int.Parse(x.Value)));
+            foreach (var artitem in seletedArtists)
+            {
+                artitem.Selected = true;
+            }
+            foreach (var albumitem in selectedAlbums)
+            {
+                albumitem.Selected = true;
+            }
+            var infoEditSong = new GallerySongViewModel()
+            {
+                id = editSong.FSongId,
+                SongName = editSong.FSongName,
+                SelectedArtistIdList = artistsIdOfSong,
+                SelectedAlbumIdList = albumsIdOfSong,
+                SelectableArtistIdList = selListArtist,
+                SelectableAlbumIdList = selListAlbum
+            };
+            return View(infoEditSong);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Delete(int? id)
         {
