@@ -1,7 +1,10 @@
+using System.IO.Compression;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using prjFruitbar8000WebCore.Models;
+using prjFruitbar8000WebCore.Models.Entities;
 using prjFruitbar8000WebCore.Models.ViewModels;
 
 namespace prjFruitbar8000WebCore.Controllers
@@ -75,6 +78,64 @@ namespace prjFruitbar8000WebCore.Controllers
                 .ToListAsync()
             };
             return View(nsvm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(NewSongViewModel nsvmSent)
+        {
+            if ((nsvmSent is null)
+            || string.IsNullOrWhiteSpace(nsvmSent.SongName))
+            {
+                return RedirectToAction(nameof(List));
+            }
+
+            var createdSong = new TSong()
+            {
+                FSongName = nsvmSent.SongName,
+            };
+            if (nsvmSent.ArtistId is not null)
+            {
+                createdSong.TArtistsSongs.Add(new TArtistsSong()
+                {
+                    FArtistId = (int)nsvmSent.ArtistId,
+                });
+            }
+
+            // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
+            if (nsvmSent.AlbumId is not null)
+            {
+                int relatedAlbumid = (int)nsvmSent.AlbumId;
+                //List<int>
+                var selectedAlbum = await _context.TAlbums
+                    .Where(x => x.FAlbumId == relatedAlbumid)
+                    .Include(x => x.TSongsAlbums)  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
+                    .FirstOrDefaultAsync();
+                if (selectedAlbum is not null)
+                {
+                    var usedTrackIdinAlbum = selectedAlbum
+                        .TSongsAlbums.Select(x => x.FTrackNumber).ToList();
+
+                    int assumedTrackNumber = 1;
+                    if (usedTrackIdinAlbum.Count() > 0)
+                    {
+                        foreach (var num in usedTrackIdinAlbum)
+                        {
+                            while (assumedTrackNumber == num)
+                            {
+                                assumedTrackNumber++;
+                            }
+                        }
+                    }
+                    createdSong.TSongsAlbums.Add(new TSongsAlbum()
+                    {
+                        FAlbumId = relatedAlbumid,
+                        FTrackNumber = assumedTrackNumber
+                    });
+                }
+            }
+            _context.TSongs.Add(createdSong);
+            _context.SaveChanges();
+            return RedirectToAction(nameof(List));
         }
     }
 }
