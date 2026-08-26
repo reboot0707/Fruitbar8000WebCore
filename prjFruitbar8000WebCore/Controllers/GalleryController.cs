@@ -146,20 +146,20 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return RedirectToAction(nameof(List));
             }
-            var selListArtist = _context.TArtists
+            var selListArtist = await _context.TArtists
                 .OrderBy(x => x.FArtistName)
                 .Select(x => new SelectListItem()
                 {
                     Value = x.FArtistId.ToString(),
                     Text = x.FArtistName
-                }).ToList();
-            var selListAlbum = _context.TAlbums
+                }).ToListAsync();
+            var selListAlbum = await _context.TAlbums
                 .OrderBy(x => x.FAlbumName)
                 .Select(x => new SelectListItem()
                 {
                     Value = x.FAlbumId.ToString(),
                     Text = x.FAlbumName
-                }).ToList();
+                }).ToListAsync();
             var editSong = await _context.TSongs
                 .Where(x => x.FSongId == id)
                 .Include(x => x.TArtistsSongs)
@@ -189,10 +189,85 @@ namespace prjFruitbar8000WebCore.Controllers
                 SongName = editSong.FSongName,
                 SelectedArtistIdList = artistsIdOfSong,
                 SelectedAlbumIdList = albumsIdOfSong,
-                SelectableArtistIdList = selListArtist,
-                SelectableAlbumIdList = selListAlbum
+                OptionArtistIdList = selListArtist,
+                OptionAlbumIdList = selListAlbum
             };
             return View(infoEditSong);
+        }
+
+        // TODO: 修正差集同步邏輯, 目前邏輯會踩到中介表 FK 不能為空值的坑
+        [HttpPost]
+        public async Task<IActionResult> Edit(GallerySongViewModel gsvm)
+        {
+            if (gsvm is null)
+            {
+                return RedirectToAction(nameof(List));
+            }
+            if (gsvm.id is null || string.IsNullOrWhiteSpace(gsvm.SongName))
+            {
+                return View(gsvm);
+            }
+            TSong updatedSongData = new TSong()
+            {
+                FSongId = (int)gsvm.id,
+                FSongName = gsvm.SongName,
+            };
+            var tobeUpdate = _context.TSongs.FirstOrDefault(x => x.FSongId == updatedSongData.FSongId);
+            if (tobeUpdate is null)
+            {
+                return View(gsvm);
+            }
+            tobeUpdate.FSongName = updatedSongData.FSongName;
+            if (gsvm.SelectedArtistIdList is not null)
+            {
+                updatedSongData.TArtistsSongs = new List<TArtistsSong>();
+                foreach (var artistid in gsvm.SelectedArtistIdList)
+                {
+                    updatedSongData.TArtistsSongs.Clear();
+                    updatedSongData.TArtistsSongs.Add(new TArtistsSong()
+                    {
+                        FArtistId = artistid,
+                    });
+                    tobeUpdate.TArtistsSongs = updatedSongData.TArtistsSongs;
+                }
+            }
+            if (gsvm.SelectedAlbumIdList is not null)
+            {
+                var relatedAlbumIdList = gsvm.SelectedAlbumIdList;
+                var selectedAlbumList = await _context.TAlbums
+                    .Where(x => gsvm.SelectedAlbumIdList.Contains(x.FAlbumId))
+                    .Include(x => x.TSongsAlbums)
+                    .ToListAsync();  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
+
+                foreach (var selectedAlbum in selectedAlbumList)
+                {
+                    updatedSongData.TSongsAlbums.Clear();
+                    var usedTrackIdinAlbum = selectedAlbum
+                        .TSongsAlbums.Select(x => x.FTrackNumber).ToList();
+
+                    int assumedTrackNumber = 1;
+                    if (usedTrackIdinAlbum.Count() > 0)
+                    {
+                        foreach (var num in usedTrackIdinAlbum)
+                        {
+                            while (assumedTrackNumber == num)
+                            {
+                                assumedTrackNumber++;
+                            }
+                        }
+                    }
+                    updatedSongData.TSongsAlbums.Add(new TSongsAlbum()
+                    {
+                        FAlbumId = selectedAlbum.FAlbumId,
+                        FTrackNumber = assumedTrackNumber
+                    });
+                    tobeUpdate.TSongsAlbums = updatedSongData.TSongsAlbums;
+                }
+            }
+
+            _context.Update(tobeUpdate);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(List));
         }
 
         [HttpPost]

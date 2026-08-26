@@ -20,7 +20,7 @@
             <div class="my-2">
                 <label asp-for="SelectedArtistIdList"></label>
                 <div class="gap-2">
-                    <select asp-for="SelectedArtistIdList" asp-items="Model.SelectableArtistIdList"
+                    <select asp-for="SelectedArtistIdList" asp-items="Model.OptionArtistIdList"
                             class="form-select flex-grow-1">
                         <option value="">請選擇創作者</option>
                     </select>
@@ -31,7 +31,7 @@
             <div class="my-2">
                 <label asp-for="SelectedAlbumIdList"></label>
                 <div class="gap-2">
-                    <select asp-for="SelectedAlbumIdList" asp-items="Model.SelectableAlbumIdList"
+                    <select asp-for="SelectedAlbumIdList" asp-items="Model.OptionAlbumIdList"
                             class="form-select flex-grow-1">
                         <option value="">請選擇專輯</option>
                     </select>

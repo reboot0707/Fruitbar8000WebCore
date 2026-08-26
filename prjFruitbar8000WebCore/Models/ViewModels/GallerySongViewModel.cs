@@ -21,6 +21,6 @@ public class GallerySongViewModel
     [DisplayName("收錄專輯 (可用Ctrl/Shift進行多選)")]
     public List<int>? SelectedAlbumIdList { get; set; }
 
-    public List<SelectListItem>? SelectableArtistIdList { get; set; } // 列表選項
-    public List<SelectListItem>? SelectableAlbumIdList { get; set; } // 列表選項
+    public List<SelectListItem>? OptionArtistIdList { get; set; } // 列表選項
+    public List<SelectListItem>? OptionAlbumIdList { get; set; } // 列表選項
 }
