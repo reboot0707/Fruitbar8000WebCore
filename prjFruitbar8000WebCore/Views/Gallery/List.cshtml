@@ -9,7 +9,7 @@
 <p>
     <a asp-action="Create" class="btn btn-success">歌曲建檔</a>
 </p>
-<table class="table">
+<table class="table align-middle">
     <thead>
         <tr>
             <th>
@@ -38,10 +38,10 @@
                     @Html.DisplayFor(model => item.AlbumName)
                 </td>
                 <td>
-                    @* <a asp-action="Edit" asp-route-id="@item.id">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@item.id">Details</a> *@
-                    <form asp-action="Delete" asp-route-id="@item.id" method="post">
-                        <button type="submit" onclick="confirm('確定永久刪除?')" class="btn btn-danger">Delete</button>
+                    <a asp-action="Edit" asp-route-id="@item.id" class="btn btn-secondary">編輯</a>
+                    @* <a asp-action="Details" asp-route-id="@item.id">Details</a> *@
+                    <form asp-action="Delete" asp-route-id="@item.id" method="post" style="display: inline;">
+                        <button type="submit" onclick="confirm('確定永久刪除?')" class="btn btn-danger">刪除</button>
                     </form>
 
                 </td>
