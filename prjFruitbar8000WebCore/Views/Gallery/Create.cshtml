@@ -40,30 +40,6 @@
                 </div>
             </div>
 
-            @* <div class="form-group">
-                <label asp-for="ArtistName" class="control-label"></label>
-                <input asp-for="ArtistName" class="form-control" />
-                <span asp-validation-for="ArtistName" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="AlbumName" class="control-label"></label>
-                <input asp-for="AlbumName" class="form-control" />
-                <span asp-validation-for="AlbumName" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="ArtistList" class="control-label"></label>
-                <input asp-for="ArtistList" class="form-control" />
-                <span asp-validation-for="ArtistList" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="AlbumList" class="control-label"></label>
-                <input asp-for="AlbumList" class="form-control" />
-                <span asp-validation-for="AlbumList" class="text-danger"></span>
-            </div> *@
-
             <div class="form-group my-2">
                 <input type="submit" value="新增歌曲" class="btn btn-primary" />
                 <a asp-action="Index" class="btn btn-secondary">回到列表</a>
@@ -71,3 +47,9 @@
         </form>
     </div>
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
