@@ -22,7 +22,7 @@ namespace prjFruitbar8000WebCore.Controllers
         // GET: QueryController
         public async Task<IActionResult> List()
         {
-            // 修改前作邏輯, 參考某音樂平台, 先用專輯為單位列表
+            // 修改前作邏輯, 參考某音樂平台, 先用歌曲為單位列表
             List<GalleryViewModel> querylistview = new List<GalleryViewModel>();
 
             var songlistq = _context.TSongs.Select(x => new
