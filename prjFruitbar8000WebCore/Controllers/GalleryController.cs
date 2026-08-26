@@ -30,7 +30,8 @@ namespace prjFruitbar8000WebCore.Controllers
 
             var songlistq = _context.TSongs.Select(x => new
             {
-                SongName = x.FSongName,
+                x.FSongId,
+                x.FSongName,
                 ArtistNames = x.TArtistsSongs.Select(y => y.FArtist.FArtistName),
                 AlbumNames = x.TSongsAlbums.Select(y => y.FAlbum.FAlbumName)
             });
@@ -44,7 +45,8 @@ namespace prjFruitbar8000WebCore.Controllers
                     {
                         GalleryViewModel qvm = new GalleryViewModel()
                         {
-                            SongName = song.SongName,
+                            id = song.FSongId,
+                            SongName = song.FSongName,
                             ArtistName = songartist,
                             AlbumName = songalbum
                         };
@@ -135,6 +137,27 @@ namespace prjFruitbar8000WebCore.Controllers
             }
             _context.TSongs.Add(createdSong);
             _context.SaveChanges();
+            return RedirectToAction(nameof(List));
+        }
+        [HttpPost]
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id is null)
+            {
+                return RedirectToAction(nameof(List));
+            }
+            var songToBeDeleted = await _context.TSongs
+                .Include(x => x.TSongsAlbums)
+                .Include(x => x.TArtistsSongs)
+                .FirstOrDefaultAsync(x => x.FSongId == id);
+            if (songToBeDeleted is null) // 開始查詢
+            {
+                return RedirectToAction(nameof(List));
+            }
+            _context.RemoveRange(songToBeDeleted.TArtistsSongs);
+            _context.RemoveRange(songToBeDeleted.TSongsAlbums);
+            _context.Remove(songToBeDeleted);
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(List));
         }
     }
