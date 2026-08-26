@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.ViewModels;
@@ -51,9 +52,29 @@ namespace prjFruitbar8000WebCore.Controllers
             return View(querylistview);
         }
 
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            var qArtist = _context.TArtists.OrderBy(x => x.FArtistName);
+            var qAlbum = _context.TAlbums.OrderBy(x => x.FAlbumName);
+
+            NewSongViewModel nsvm = new NewSongViewModel()
+            {
+                SongName = String.Empty,
+                ArtistId = null,
+                AlbumId = null,
+                ArtistList = await qArtist.Select(x => new SelectListItem()
+                {
+                    Value = x.FArtistId.ToString(),
+                    Text = x.FArtistName
+                }).ToListAsync(),
+                AlbumList = await qAlbum.Select(x => new SelectListItem()
+                {
+                    Value = x.FAlbumId.ToString(),
+                    Text = x.FAlbumName
+                })
+                .ToListAsync()
+            };
+            return View(nsvm);
         }
     }
 }

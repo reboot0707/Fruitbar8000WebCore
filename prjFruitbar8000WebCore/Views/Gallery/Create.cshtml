@@ -1,15 +1,14 @@
-@model prjFruitbar8000WebCore.Models.ViewModels.GalleryViewModel
+@model prjFruitbar8000WebCore.Models.ViewModels.NewSongViewModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "新曲建檔";
 }
 
 <h1>輸入新曲資訊</h1>
 
-
 <hr />
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-12 col-md-6">
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -19,7 +18,29 @@
                 <span asp-validation-for="SongName" class="text-danger"></span>
             </div>
 
-            <div class="form-group">
+            <div>
+                <label asp-for="ArtistId"></label>
+                <div class="d-flex gap-2">
+                    <select asp-for="ArtistId" asp-items="Model.ArtistList" class="form-select flex-grow-1">
+                        <option value="">請選擇創作者</option>
+                    </select>
+                    <a asp-controller="Artists" asp-action="Create" target="_blank"
+                       class="btn btn-secondary flex-shrink-0">新增創作者</a>
+                </div>
+            </div>
+
+            <div>
+                <label asp-for="AlbumId"></label>
+                <div class="d-flex gap-2">
+                    <select asp-for="AlbumId" asp-items="Model.AlbumList" class="form-select flex-grow-1">
+                        <option value="">請選擇專輯</option>
+                    </select>
+                    <a asp-controller="Albums" asp-action="Create" target="_blank"
+                       class="btn btn-secondary flex-shrink-0">新增專輯</a>
+                </div>
+            </div>
+
+            @* <div class="form-group">
                 <label asp-for="ArtistName" class="control-label"></label>
                 <input asp-for="ArtistName" class="form-control" />
                 <span asp-validation-for="ArtistName" class="text-danger"></span>
@@ -30,13 +51,23 @@
                 <input asp-for="AlbumName" class="form-control" />
                 <span asp-validation-for="AlbumName" class="text-danger"></span>
             </div>
+
             <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <label asp-for="ArtistList" class="control-label"></label>
+                <input asp-for="ArtistList" class="form-control" />
+                <span asp-validation-for="ArtistList" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="AlbumList" class="control-label"></label>
+                <input asp-for="AlbumList" class="form-control" />
+                <span asp-validation-for="AlbumList" class="text-danger"></span>
+            </div> *@
+
+            <div class="form-group my-2">
+                <input type="submit" value="新增歌曲" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">回到列表</a>
             </div>
         </form>
     </div>
-</div>
-
-<div>
-    <a asp-action="Index">回到列表</a>
 </div>
