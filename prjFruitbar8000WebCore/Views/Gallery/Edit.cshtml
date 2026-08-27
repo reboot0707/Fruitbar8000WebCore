@@ -27,6 +27,7 @@
                     <a asp-controller="Artists" asp-action="Create" target="_blank"
                        class="btn btn-success flex-shrink-0">新增創作者</a>
                 </div>
+                <span asp-validation-for="SelectedArtistIdList" class="text-danger"></span>
             </div>
             <div class="my-2">
                 <label asp-for="SelectedAlbumIdList"></label>
@@ -38,17 +39,8 @@
                     <a asp-controller="Albums" asp-action="Create" target="_blank"
                        class="btn btn-success flex-shrink-0">新增專輯</a>
                 </div>
+                <span asp-validation-for="SelectedAlbumIdList" class="text-danger"></span>
             </div>
-            @* <div class="form-group">
-                <label asp-for="SelectableArtistIdList" class="control-label"></label>
-                <input asp-for="SelectableArtistIdList" class="form-control" />
-                <span asp-validation-for="SelectableArtistIdList" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="SelectableAlbumIdList" class="control-label"></label>
-                <input asp-for="SelectableAlbumIdList" class="form-control" />
-                <span asp-validation-for="SelectableAlbumIdList" class="text-danger"></span>
-            </div> *@
             <div class="form-group my-2">
                 <input type="submit" value="儲存資訊" class="btn btn-primary" />
                 <a asp-action="List" class="btn btn-secondary">回到列表</a>
