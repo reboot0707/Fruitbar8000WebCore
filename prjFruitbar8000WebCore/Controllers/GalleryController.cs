@@ -108,7 +108,6 @@ namespace prjFruitbar8000WebCore.Controllers
             if (nsvmSent.AlbumId is not null)
             {
                 int relatedAlbumid = (int)nsvmSent.AlbumId;
-                //List<int>
                 var selectedAlbum = await _context.TAlbums
                     .Where(x => x.FAlbumId == relatedAlbumid)
                     .Include(x => x.TSongsAlbums)  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
@@ -208,72 +207,74 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return View(gsvm);
             }
-            // FIXME: 此查詢必須一併載入 TArtistsSongs 與 TSongsAlbums。導覽集合雖已初始化但未代表資料庫內容，
+            // FIXED: 此查詢必須一併載入 TArtistsSongs 與 TSongsAlbums。導覽集合雖已初始化但未代表資料庫內容，
             // 因此下方的 existRelationInList 會把既有關聯誤判為不存在，最後 INSERT 時撞上複合唯一索引。
-            var tobeUpdate = _context.TSongs.FirstOrDefault(x => x.FSongId == gsvm.id);
+            var tobeUpdate = _context.TSongs
+            .Include(x => x.TArtistsSongs)
+            .Include(x => x.TSongsAlbums)
+            .FirstOrDefault(x => x.FSongId == gsvm.id);
             if (tobeUpdate is null)
             {
                 return View(gsvm);
             }
             tobeUpdate.FSongName = gsvm.SongName;
-            // FIXME: 多選欄位全部取消時可能繫結成 null；若以 null 跳過整段同步，既有關聯將無法全部刪除。
+            // FIXED: 多選欄位全部取消時可能繫結成 null；若以 null 跳過整段同步，既有關聯將無法全部刪除。
             if (gsvm.SelectedArtistIdList is not null)
             {
-                // tobeUpdate.TArtistsSongs = new List<TArtistsSong>();
+                List<TArtistsSong> tobeAdd = new List<TArtistsSong>();
+                List<TArtistsSong> tobeRemoved = new List<TArtistsSong>();
+
                 foreach (var artistid in gsvm.SelectedArtistIdList)
                 {
                     // 檢查是否已有重複關聯
                     var existRelationInList = tobeUpdate.TArtistsSongs
                         .Where(x => x.FArtistId == artistid).FirstOrDefault();
 
-                    // 如果沒有重複關聯, 新增關聯 
+                    // 如果沒有重複關聯, 新增關聯
                     if (existRelationInList is null)
                     {
-                        tobeUpdate.TArtistsSongs.Add(new TArtistsSong()
+                        // 先存在 List 裡面，全部確認後直接對 DbSet 操作
+                        tobeAdd.Add(new TArtistsSong()
                         {
                             FArtistId = artistid,
+                            FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
                         });
                     }
-                    // tobeUpdate.TArtistsSongs = updatedSongData.TArtistsSongs;
                 }
-                // FIXME: 不可在 foreach 枚舉 TArtistsSongs 時修改同一集合，否則會拋出 Collection was modified；
+                // FIXED: 不可在 foreach 枚舉 TArtistsSongs 時修改同一集合，否則會拋出 Collection was modified；
                 // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
-                foreach (var item in tobeUpdate.TArtistsSongs)
-                {
-                    // 如果既有關聯創作者不存在於新關聯創作者清單, 移除
-                    if (!gsvm.SelectedArtistIdList.Contains(item.FArtistId))
-                    {
-                        tobeUpdate.TArtistsSongs.Remove(item);
-                    }
-                }
+                tobeRemoved = tobeUpdate.TArtistsSongs.Where(x => !gsvm.SelectedArtistIdList.Contains(x.FArtistId)).ToList();
+
+                _context.TArtistsSongs.AddRange(tobeAdd);
+                _context.TArtistsSongs.RemoveRange(tobeRemoved);
             }
-            // FIXME: 多選欄位全部取消時可能繫結成 null；若以 null 跳過整段同步，既有關聯將無法全部刪除。
+            // FIXED: 多選欄位全部取消時可能繫結成 null；若以 null 跳過整段同步，既有關聯將無法全部刪除。
             if (gsvm.SelectedAlbumIdList is not null)
             {
-                var relatedAlbumIdList = gsvm.SelectedAlbumIdList;
+                List<TSongsAlbum> tobeAdd = new List<TSongsAlbum>();
+                List<TSongsAlbum> tobeRemoved = new List<TSongsAlbum>();
+
                 var selectedAlbumList = await _context.TAlbums
                     .Where(x => gsvm.SelectedAlbumIdList.Contains(x.FAlbumId))
                     .Include(x => x.TSongsAlbums)
                     .ToListAsync();  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
 
-                // FIXME: 這裡的 relationship fix-up 最多只會補入「本次仍有選取」的專輯關聯；未選取的舊關聯
-                // 不會出現在 tobeUpdate.TSongsAlbums，因此下方差集刪除仍找不到它們。
-
-                // tobeUpdate.TSongsAlbums = new List<TSongsAlbum>();
                 foreach (var selectedAlbum in selectedAlbumList)
                 {
                     // 檢查是否已有重複關聯
                     var existRelationInList = tobeUpdate.TSongsAlbums
                         .Where(x => x.FAlbumId == selectedAlbum.FAlbumId).FirstOrDefault();
 
-                    // 如果沒有重複關聯, 新增關聯 
+                    // 如果沒有重複關聯, 新增關聯
                     if (existRelationInList is null)
                     {
-                        // FIXME: TSongsAlbums 沒有保證排序；目前逐項 while 的結果受列舉順序影響，
+                        // FIXED: TSongsAlbums 沒有保證排序；目前逐項 while 的結果受列舉順序影響，
                         // 例如曲號 [2, 1] 會算出已被占用的 2，儲存時撞上 (AlbumId, TrackNumber) 唯一索引。
                         // 即使改為正確的空號計算，並行請求仍可能選到同一曲號，儲存時仍須處理唯一限制衝突。
-                        var usedTrackIdinAlbum = selectedAlbum
-                        .TSongsAlbums.Select(x => x.FTrackNumber).ToList();
+                        var usedTrackIdinAlbum = selectedAlbum.TSongsAlbums
+                            .OrderBy(x => x.FTrackNumber)
+                            .Select(x => x.FTrackNumber)
+                            .ToList();
 
                         int assumedTrackNumber = 1;
                         if (usedTrackIdinAlbum.Count() > 0)
@@ -287,28 +288,22 @@ namespace prjFruitbar8000WebCore.Controllers
                             }
                         }
 
-                        tobeUpdate.TSongsAlbums.Add(new TSongsAlbum()
+                        tobeAdd.Add(new TSongsAlbum()
                         {
                             FAlbumId = selectedAlbum.FAlbumId,
-                            FTrackNumber = assumedTrackNumber
+                            FTrackNumber = assumedTrackNumber,
+                            FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
                         });
                     }
-                    // tobeUpdate.TSongsAlbums = updatedSongData.TSongsAlbums;
                 }
-                // FIXME: 不可在 foreach 枚舉 TSongsAlbums 時修改同一集合，否則會拋出 Collection was modified；
+                // FIXED: 不可在 foreach 枚舉 TSongsAlbums 時修改同一集合，否則會拋出 Collection was modified；
                 // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
-                foreach (var item in tobeUpdate.TSongsAlbums)
-                {
-                    // 如果既有關聯創作者不存在於新關聯創作者清單, 移除
-                    if (!gsvm.SelectedAlbumIdList.Contains(item.FAlbumId))
-                    {
-                        tobeUpdate.TSongsAlbums.Remove(item);
-                    }
-                }
+                tobeRemoved = tobeUpdate.TSongsAlbums.Where(x => !(gsvm.SelectedAlbumIdList.Contains(x.FAlbumId))).ToList();
+
+                _context.TSongsAlbums.AddRange(tobeAdd);
+                _context.TSongsAlbums.RemoveRange(tobeRemoved);
             }
 
-            // FIXME: tobeUpdate 已由此 DbContext 追蹤，不需再 Update 整個實體圖；中介表的新增與刪除應各自設定正確狀態。
-            _context.Update(tobeUpdate);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(List));
         }
