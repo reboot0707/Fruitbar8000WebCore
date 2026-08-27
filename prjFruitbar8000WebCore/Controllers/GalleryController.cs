@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using NuGet.Packaging;
 using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.Entities;
 using prjFruitbar8000WebCore.Models.ViewModels;
@@ -207,28 +208,38 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return View(gsvm);
             }
-            TSong updatedSongData = new TSong()
-            {
-                FSongId = (int)gsvm.id,
-                FSongName = gsvm.SongName,
-            };
-            var tobeUpdate = _context.TSongs.FirstOrDefault(x => x.FSongId == updatedSongData.FSongId);
+            var tobeUpdate = _context.TSongs.FirstOrDefault(x => x.FSongId == gsvm.id);
             if (tobeUpdate is null)
             {
                 return View(gsvm);
             }
-            tobeUpdate.FSongName = updatedSongData.FSongName;
+            tobeUpdate.FSongName = gsvm.SongName;
             if (gsvm.SelectedArtistIdList is not null)
             {
-                updatedSongData.TArtistsSongs = new List<TArtistsSong>();
+                // tobeUpdate.TArtistsSongs = new List<TArtistsSong>();
                 foreach (var artistid in gsvm.SelectedArtistIdList)
                 {
-                    updatedSongData.TArtistsSongs.Clear();
-                    updatedSongData.TArtistsSongs.Add(new TArtistsSong()
+                    // 檢查是否已有重複關聯
+                    var existRelationInList = tobeUpdate.TArtistsSongs
+                        .Where(x => x.FArtistId == artistid).FirstOrDefault();
+
+                    // 如果沒有重複關聯, 新增關聯 
+                    if (existRelationInList is null)
                     {
-                        FArtistId = artistid,
-                    });
-                    tobeUpdate.TArtistsSongs = updatedSongData.TArtistsSongs;
+                        tobeUpdate.TArtistsSongs.Add(new TArtistsSong()
+                        {
+                            FArtistId = artistid,
+                        });
+                    }
+                    // tobeUpdate.TArtistsSongs = updatedSongData.TArtistsSongs;
+                }
+                foreach (var item in tobeUpdate.TArtistsSongs)
+                {
+                    // 如果既有關聯創作者不存在於新關聯創作者清單, 移除
+                    if (!gsvm.SelectedArtistIdList.Contains(item.FArtistId))
+                    {
+                        tobeUpdate.TArtistsSongs.Remove(item);
+                    }
                 }
             }
             if (gsvm.SelectedAlbumIdList is not null)
@@ -239,29 +250,46 @@ namespace prjFruitbar8000WebCore.Controllers
                     .Include(x => x.TSongsAlbums)
                     .ToListAsync();  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
 
+                // tobeUpdate.TSongsAlbums = new List<TSongsAlbum>();
                 foreach (var selectedAlbum in selectedAlbumList)
                 {
-                    updatedSongData.TSongsAlbums.Clear();
-                    var usedTrackIdinAlbum = selectedAlbum
+                    // 檢查是否已有重複關聯
+                    var existRelationInList = tobeUpdate.TSongsAlbums
+                        .Where(x => x.FAlbumId == selectedAlbum.FAlbumId).FirstOrDefault();
+
+                    // 如果沒有重複關聯, 新增關聯 
+                    if (existRelationInList is null)
+                    {
+                        var usedTrackIdinAlbum = selectedAlbum
                         .TSongsAlbums.Select(x => x.FTrackNumber).ToList();
 
-                    int assumedTrackNumber = 1;
-                    if (usedTrackIdinAlbum.Count() > 0)
-                    {
-                        foreach (var num in usedTrackIdinAlbum)
+                        int assumedTrackNumber = 1;
+                        if (usedTrackIdinAlbum.Count() > 0)
                         {
-                            while (assumedTrackNumber == num)
+                            foreach (var num in usedTrackIdinAlbum)
                             {
-                                assumedTrackNumber++;
+                                while (assumedTrackNumber == num)
+                                {
+                                    assumedTrackNumber++;
+                                }
                             }
                         }
+
+                        tobeUpdate.TSongsAlbums.Add(new TSongsAlbum()
+                        {
+                            FAlbumId = selectedAlbum.FAlbumId,
+                            FTrackNumber = assumedTrackNumber
+                        });
                     }
-                    updatedSongData.TSongsAlbums.Add(new TSongsAlbum()
+                    // tobeUpdate.TSongsAlbums = updatedSongData.TSongsAlbums;
+                }
+                foreach (var item in tobeUpdate.TSongsAlbums)
+                {
+                    // 如果既有關聯創作者不存在於新關聯創作者清單, 移除
+                    if (!gsvm.SelectedAlbumIdList.Contains(item.FAlbumId))
                     {
-                        FAlbumId = selectedAlbum.FAlbumId,
-                        FTrackNumber = assumedTrackNumber
-                    });
-                    tobeUpdate.TSongsAlbums = updatedSongData.TSongsAlbums;
+                        tobeUpdate.TSongsAlbums.Remove(item);
+                    }
                 }
             }
 
