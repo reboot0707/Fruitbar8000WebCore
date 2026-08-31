@@ -29,13 +29,19 @@ namespace prjFruitbar8000WebCore.Controllers
             // 修改前作邏輯, 參考某音樂平台, 先用歌曲為單位列表
             List<GalleryViewModel> querylistview = new List<GalleryViewModel>();
 
-            var songlistq = _context.TSongs.Select(x => new
-            {
-                x.FSongId,
-                x.FSongName,
-                ArtistNames = x.TArtistsSongs.Select(y => y.FArtist.FArtistName),
-                AlbumNames = x.TSongsAlbums.Select(y => y.FAlbum.FAlbumName)
-            });
+            var songlistq = _context.TSongs
+                .OrderBy(x => x.FSongName)
+                .Select(x => new
+                {
+                    x.FSongId,
+                    x.FSongName,
+                    ArtistNames = x.TArtistsSongs
+                        .OrderBy(y => y.FArtist.FArtistName)
+                        .Select(y => y.FArtist.FArtistName),
+                    AlbumNames = x.TSongsAlbums
+                        .OrderBy(y => y.FAlbum.FAlbumName)
+                        .Select(y => y.FAlbum.FAlbumName)
+                });
 
             // NEXT-TODO: use "SelectMany" to replace multi-layer loop
             foreach (var song in songlistq)
