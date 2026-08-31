@@ -19,8 +19,8 @@ public class NewSongViewModel
     public int? AlbumId { get; set; }
 
     // NEXT-TODO: 使用新式 C# 語法糖初始化 ( ` = [ ]; ` )
-    public List<SelectListItem>? ArtistList { get; set; }
+    public List<SelectListItem> ArtistList { get; set; } = [];
 
     // NEXT-TODO: 使用新式 C# 語法糖初始化 ( ` = [ ]; ` )
-    public List<SelectListItem>? AlbumList { get; set; }
+    public List<SelectListItem> AlbumList { get; set; } = [];
 }

@@ -203,7 +203,11 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return RedirectToAction(nameof(List));
             }
-            if (gsvm.id is null || string.IsNullOrWhiteSpace(gsvm.SongName))
+            if (gsvm.id is null || 
+                // KNOWN ISSUE: 因應 index 選取邏輯一定要有對應關聯資料，暫不開放藉由 Controller 清空歌曲所有的創作者/專輯關聯
+                gsvm.SelectedArtistIdList is null || 
+                gsvm.SelectedAlbumIdList is null || 
+                string.IsNullOrWhiteSpace(gsvm.SongName))
             {
                 return View(gsvm);
             }
@@ -218,91 +222,85 @@ namespace prjFruitbar8000WebCore.Controllers
                 return View(gsvm);
             }
             tobeUpdate.FSongName = gsvm.SongName;
-            // FIXED: 多選欄位全部取消時可能繫結成 null；若以 null 跳過整段同步，既有關聯將無法全部刪除。
-            if (gsvm.SelectedArtistIdList is not null)
+            
+            List<TArtistsSong> artistTobeAdd = new List<TArtistsSong>();
+            List<TArtistsSong> artistTobeRemoved = new List<TArtistsSong>();
+
+            foreach (var artistid in gsvm.SelectedArtistIdList)
             {
-                List<TArtistsSong> tobeAdd = new List<TArtistsSong>();
-                List<TArtistsSong> tobeRemoved = new List<TArtistsSong>();
+                // 檢查是否已有重複關聯
+                var existRelationInList = tobeUpdate.TArtistsSongs
+                    .Where(x => x.FArtistId == artistid).FirstOrDefault();
 
-                foreach (var artistid in gsvm.SelectedArtistIdList)
+                // 如果沒有重複關聯, 新增關聯
+                if (existRelationInList is null)
                 {
-                    // 檢查是否已有重複關聯
-                    var existRelationInList = tobeUpdate.TArtistsSongs
-                        .Where(x => x.FArtistId == artistid).FirstOrDefault();
-
-                    // 如果沒有重複關聯, 新增關聯
-                    if (existRelationInList is null)
+                    // 先存在 List 裡面，全部確認後直接對 DbSet 操作
+                    artistTobeAdd.Add(new TArtistsSong()
                     {
-                        // 先存在 List 裡面，全部確認後直接對 DbSet 操作
-                        tobeAdd.Add(new TArtistsSong()
-                        {
-                            FArtistId = artistid,
-                            FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
-                        });
-                    }
+                        FArtistId = artistid,
+                        FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
+                    });
                 }
-                // FIXED: 不可在 foreach 枚舉 TArtistsSongs 時修改同一集合，否則會拋出 Collection was modified；
-                // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
-                tobeRemoved = tobeUpdate.TArtistsSongs.Where(x => !gsvm.SelectedArtistIdList.Contains(x.FArtistId)).ToList();
-
-                _context.TArtistsSongs.AddRange(tobeAdd);
-                _context.TArtistsSongs.RemoveRange(tobeRemoved);
             }
-            // FIXED: 多選欄位全部取消時可能繫結成 null；若以 null 跳過整段同步，既有關聯將無法全部刪除。
-            if (gsvm.SelectedAlbumIdList is not null)
+            // FIXED: 不可在 foreach 枚舉 TArtistsSongs 時修改同一集合，否則會拋出 Collection was modified；
+            // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
+            artistTobeRemoved = tobeUpdate.TArtistsSongs.Where(x => !gsvm.SelectedArtistIdList.Contains(x.FArtistId)).ToList();
+
+            _context.TArtistsSongs.AddRange(artistTobeAdd);
+            _context.TArtistsSongs.RemoveRange(artistTobeRemoved);
+
+            List<TSongsAlbum> albumsTobeAdd = new List<TSongsAlbum>();
+            List<TSongsAlbum> albumsTobeRemoved = new List<TSongsAlbum>();
+
+            var selectedAlbumList = await _context.TAlbums
+                .Where(x => gsvm.SelectedAlbumIdList.Contains(x.FAlbumId))
+                .Include(x => x.TSongsAlbums)
+                .ToListAsync();  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
+
+            foreach (var selectedAlbum in selectedAlbumList)
             {
-                List<TSongsAlbum> tobeAdd = new List<TSongsAlbum>();
-                List<TSongsAlbum> tobeRemoved = new List<TSongsAlbum>();
+                // 檢查是否已有重複關聯
+                var existRelationInList = tobeUpdate.TSongsAlbums
+                    .Where(x => x.FAlbumId == selectedAlbum.FAlbumId).FirstOrDefault();
 
-                var selectedAlbumList = await _context.TAlbums
-                    .Where(x => gsvm.SelectedAlbumIdList.Contains(x.FAlbumId))
-                    .Include(x => x.TSongsAlbums)
-                    .ToListAsync();  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
-
-                foreach (var selectedAlbum in selectedAlbumList)
+                // 如果沒有重複關聯, 新增關聯
+                if (existRelationInList is null)
                 {
-                    // 檢查是否已有重複關聯
-                    var existRelationInList = tobeUpdate.TSongsAlbums
-                        .Where(x => x.FAlbumId == selectedAlbum.FAlbumId).FirstOrDefault();
+                    // FIXED: TSongsAlbums 沒有保證排序；目前逐項 while 的結果受列舉順序影響，
+                    // 例如曲號 [2, 1] 會算出已被占用的 2，儲存時撞上 (AlbumId, TrackNumber) 唯一索引。
+                    // 即使改為正確的空號計算，並行請求仍可能選到同一曲號，儲存時仍須處理唯一限制衝突。
+                    var usedTrackIdinAlbum = selectedAlbum.TSongsAlbums
+                        .OrderBy(x => x.FTrackNumber)
+                        .Select(x => x.FTrackNumber)
+                        .ToList();
 
-                    // 如果沒有重複關聯, 新增關聯
-                    if (existRelationInList is null)
+                    int assumedTrackNumber = 1;
+                    if (usedTrackIdinAlbum.Count() > 0)
                     {
-                        // FIXED: TSongsAlbums 沒有保證排序；目前逐項 while 的結果受列舉順序影響，
-                        // 例如曲號 [2, 1] 會算出已被占用的 2，儲存時撞上 (AlbumId, TrackNumber) 唯一索引。
-                        // 即使改為正確的空號計算，並行請求仍可能選到同一曲號，儲存時仍須處理唯一限制衝突。
-                        var usedTrackIdinAlbum = selectedAlbum.TSongsAlbums
-                            .OrderBy(x => x.FTrackNumber)
-                            .Select(x => x.FTrackNumber)
-                            .ToList();
-
-                        int assumedTrackNumber = 1;
-                        if (usedTrackIdinAlbum.Count() > 0)
+                        foreach (var num in usedTrackIdinAlbum)
                         {
-                            foreach (var num in usedTrackIdinAlbum)
+                            while (assumedTrackNumber == num)
                             {
-                                while (assumedTrackNumber == num)
-                                {
-                                    assumedTrackNumber++;
-                                }
+                                assumedTrackNumber++;
                             }
                         }
-
-                        tobeAdd.Add(new TSongsAlbum()
-                        {
-                            FAlbumId = selectedAlbum.FAlbumId,
-                            FTrackNumber = assumedTrackNumber,
-                            FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
-                        });
                     }
-                }
-                // FIXED: 不可在 foreach 枚舉 TSongsAlbums 時修改同一集合，否則會拋出 Collection was modified；
-                // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
-                tobeRemoved = tobeUpdate.TSongsAlbums.Where(x => !(gsvm.SelectedAlbumIdList.Contains(x.FAlbumId))).ToList();
 
-                _context.TSongsAlbums.AddRange(tobeAdd);
-                _context.TSongsAlbums.RemoveRange(tobeRemoved);
+                    albumsTobeAdd.Add(new TSongsAlbum()
+                    {
+                        FAlbumId = selectedAlbum.FAlbumId,
+                        FTrackNumber = assumedTrackNumber,
+                        FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
+                    });
+                }
             }
+            // FIXED: 不可在 foreach 枚舉 TSongsAlbums 時修改同一集合，否則會拋出 Collection was modified；
+            // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
+            albumsTobeRemoved = tobeUpdate.TSongsAlbums.Where(x => !gsvm.SelectedAlbumIdList.Contains(x.FAlbumId)).ToList();
+
+            _context.TSongsAlbums.AddRange(albumsTobeAdd);
+            _context.TSongsAlbums.RemoveRange(albumsTobeRemoved);
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(List));
