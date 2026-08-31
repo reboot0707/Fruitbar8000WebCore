@@ -42,17 +42,19 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 foreach (var songalbum in song.AlbumNames)
                 {
+                    List<string> ArtistNameList = new List<string>();
                     foreach (var songartist in song.ArtistNames)
                     {
-                        GalleryViewModel qvm = new GalleryViewModel()
-                        {
-                            id = song.FSongId,
-                            SongName = song.FSongName,
-                            ArtistName = songartist,
-                            AlbumName = songalbum
-                        };
-                        querylistview.Add(qvm);
+                        ArtistNameList.Add(songartist);
                     }
+                    GalleryViewModel qvm = new GalleryViewModel()
+                    {
+                        id = song.FSongId,
+                        SongName = song.FSongName,
+                        ArtistName = String.Join('、', ArtistNameList),
+                        AlbumName = songalbum
+                    };
+                    querylistview.Add(qvm);
                 }
             }
             return View(querylistview);
