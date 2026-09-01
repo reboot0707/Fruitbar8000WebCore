@@ -1,4 +1,5 @@
-﻿using prjFruitbar8000WebCore.Models.ViewModels;
+﻿using Microsoft.EntityFrameworkCore;
+using prjFruitbar8000WebCore.Models.ViewModels;
 
 namespace prjFruitbar8000WebCore.Models.Services;
 
@@ -44,5 +45,26 @@ public class GalleryDataAccess
             }
         }
         return querylistview;
+    }
+
+    public void Delete(int? songId, FruitBarDbContext InputContext)
+    {
+        if(songId is null)
+        { 
+            return;
+        }
+        var songToBeDeleted = InputContext.TSongs
+            .Include(x => x.TSongsAlbums)
+            .Include(x => x.TArtistsSongs)
+            .FirstOrDefault(x => x.FSongId == songId);
+        if (songToBeDeleted is null) // 開始查詢
+        {
+            return;
+        }
+        InputContext.RemoveRange(songToBeDeleted.TArtistsSongs);
+        InputContext.RemoveRange(songToBeDeleted.TSongsAlbums);
+        InputContext.Remove(songToBeDeleted);
+        InputContext.SaveChanges();
+        return;
     }
 }

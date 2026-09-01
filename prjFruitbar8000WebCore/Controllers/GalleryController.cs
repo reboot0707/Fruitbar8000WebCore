@@ -290,18 +290,7 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return RedirectToAction(nameof(List));
             }
-            var songToBeDeleted = await _context.TSongs
-                .Include(x => x.TSongsAlbums)
-                .Include(x => x.TArtistsSongs)
-                .FirstOrDefaultAsync(x => x.FSongId == id);
-            if (songToBeDeleted is null) // 開始查詢
-            {
-                return RedirectToAction(nameof(List));
-            }
-            _context.RemoveRange(songToBeDeleted.TArtistsSongs);
-            _context.RemoveRange(songToBeDeleted.TSongsAlbums);
-            _context.Remove(songToBeDeleted);
-            await _context.SaveChangesAsync();
+            new GalleryDataAccess().Delete(id, _context);
             return RedirectToAction(nameof(List));
         }
     }
