@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using NuGet.Packaging;
 using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.Entities;
+using prjFruitbar8000WebCore.Models.Services;
 using prjFruitbar8000WebCore.Models.ViewModels;
 
 namespace prjFruitbar8000WebCore.Controllers
@@ -27,43 +28,11 @@ namespace prjFruitbar8000WebCore.Controllers
         public async Task<IActionResult> List()
         {
             // 修改前作邏輯, 參考某音樂平台, 先用歌曲為單位列表
-            List<GalleryViewModel> querylistview = new List<GalleryViewModel>();
+            List<GalleryListViewModel> queryList = new List<GalleryListViewModel>();
 
-            var songlistq = _context.TSongs
-                .OrderBy(x => x.FSongName)
-                .Select(x => new
-                {
-                    x.FSongId,
-                    x.FSongName,
-                    ArtistNames = x.TArtistsSongs
-                        .OrderBy(y => y.FArtist.FArtistName)
-                        .Select(y => y.FArtist.FArtistName),
-                    AlbumNames = x.TSongsAlbums
-                        .OrderBy(y => y.FAlbum.FAlbumName)
-                        .Select(y => y.FAlbum.FAlbumName)
-                });
+            queryList = new GalleryDataAccess().List(queryList, _context);
 
-            // NEXT-TODO: use "SelectMany" to replace multi-layer loop
-            foreach (var song in songlistq)
-            {
-                foreach (var songalbum in song.AlbumNames)
-                {
-                    List<string> ArtistNameList = new List<string>();
-                    foreach (var songartist in song.ArtistNames)
-                    {
-                        ArtistNameList.Add(songartist);
-                    }
-                    GalleryViewModel qvm = new GalleryViewModel()
-                    {
-                        id = song.FSongId,
-                        SongName = song.FSongName,
-                        ArtistName = String.Join('、', ArtistNameList),
-                        AlbumName = songalbum
-                    };
-                    querylistview.Add(qvm);
-                }
-            }
-            return View(querylistview);
+            return View(queryList);
         }
 
         public async Task<IActionResult> Create()
