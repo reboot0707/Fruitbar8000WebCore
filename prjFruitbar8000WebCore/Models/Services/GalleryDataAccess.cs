@@ -47,24 +47,24 @@ public class GalleryDataAccess
         return querylistview;
     }
 
-    public void Delete(int? songId, FruitBarDbContext InputContext)
+    public async Task<bool> Delete(int? songId, FruitBarDbContext InputContext)
     {
         if(songId is null)
         { 
-            return;
+            return false;
         }
-        var songToBeDeleted = InputContext.TSongs
+        var songToBeDeleted = await InputContext.TSongs
             .Include(x => x.TSongsAlbums)
             .Include(x => x.TArtistsSongs)
-            .FirstOrDefault(x => x.FSongId == songId);
+            .FirstOrDefaultAsync(x => x.FSongId == songId);
         if (songToBeDeleted is null) // 開始查詢
         {
-            return;
+            return false;
         }
         InputContext.RemoveRange(songToBeDeleted.TArtistsSongs);
         InputContext.RemoveRange(songToBeDeleted.TSongsAlbums);
         InputContext.Remove(songToBeDeleted);
-        InputContext.SaveChanges();
-        return;
+        await InputContext.SaveChangesAsync();
+        return true;
     }
 }
