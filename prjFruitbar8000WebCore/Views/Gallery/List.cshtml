@@ -1,4 +1,4 @@
-@model IEnumerable<prjFruitbar8000WebCore.Models.ViewModels.GalleryViewModel>
+@model IEnumerable<prjFruitbar8000WebCore.Models.ViewModels.GalleryListViewModel>
 
 @{
     ViewData["Title"] = "所有樂曲列表";
@@ -16,7 +16,7 @@
                 @Html.DisplayNameFor(model => model.SongName)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.ArtistName)
+                @Html.DisplayNameFor(model => model.ArtistNames)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.AlbumName)
@@ -32,7 +32,7 @@
                     @Html.DisplayFor(model => item.SongName)
                 </td>
                 <td>
-                    @Html.DisplayFor(model => item.ArtistName)
+                    @Html.DisplayFor(model => item.ArtistNames)
                 </td>
                 <td>
                     @Html.DisplayFor(model => item.AlbumName)
