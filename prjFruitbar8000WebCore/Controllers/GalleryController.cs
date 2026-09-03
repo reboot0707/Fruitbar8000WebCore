@@ -32,12 +32,12 @@ namespace prjFruitbar8000WebCore.Controllers
 
         public async Task<IActionResult> Create()
         {
-            NewSongViewModel nsvm = await new GalleryDataAccess().GetCreate(_context);
+            GallerySongViewModel nsvm = await new GalleryDataAccess().GetCreate(_context);
             return View(nsvm);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(NewSongViewModel nsvmSent)
+        public async Task<IActionResult> Create(GallerySongViewModel nsvmSent)
         {
             await new GalleryDataAccess().PostCreate(nsvmSent, _context);
             return RedirectToAction(nameof(List));

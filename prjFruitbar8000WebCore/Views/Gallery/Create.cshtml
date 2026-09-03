@@ -1,10 +1,10 @@
-@model prjFruitbar8000WebCore.Models.ViewModels.NewSongViewModel
+@model prjFruitbar8000WebCore.Models.ViewModels.GallerySongViewModel
 
 @{
-    ViewData["Title"] = "新曲建檔";
+    ViewData["Title"] = "建立新曲";
 }
 
-<h1>輸入新曲資訊</h1>
+<h2>輸入新曲資訊</h2>
 <p>若有關聯多位創作者/專輯的需求, 請於建檔成功後至修改介面更新資料.</p>
 
 <hr />
@@ -19,28 +19,27 @@
                 <span asp-validation-for="SongName" class="text-danger"></span>
             </div>
 
-            <div>
-                <label asp-for="ArtistId"></label>
-                <div class="d-flex gap-2">
-                    <select asp-for="ArtistId" asp-items="Model.ArtistList" class="form-select flex-grow-1">
-                        <option value="">請選擇創作者</option>
+            <div class="form-group my-2">
+                <label asp-for="SelectedArtistIdList" class="control-label"></label>
+                <div class="gap-2">
+                    <select asp-for="SelectedArtistIdList" asp-items="Model.OptionArtistIdList"
+                            class="form-select flex-grow-1">
                     </select>
-                    <a asp-controller="Artists" asp-action="Create" target="_blank"
-                       class="btn btn-secondary flex-shrink-0">新增創作者</a>
+                    <a asp-controller="Artists" asp-action="Create" target="_blank" class="btn btn-success flex-shrink-0">新增創作者</a>
                 </div>
-                <span asp-validation-for="ArtistId" class="text-danger"></span>
+                <span asp-validation-for="SelectedArtistIdList" class="text-danger"></span>
             </div>
 
-            <div>
-                <label asp-for="AlbumId"></label>
-                <div class="d-flex gap-2">
-                    <select asp-for="AlbumId" asp-items="Model.AlbumList" class="form-select flex-grow-1">
-                        <option value="">請選擇專輯</option>
+            <div class="form-group">
+                <label asp-for="SelectedAlbumIdList" class="control-label"></label>
+                <div class="gap-2">
+                    <select asp-for="SelectedAlbumIdList" asp-items="Model.OptionAlbumIdList"
+                                class="form-select flex-grow-1">
+                            <option value="">請選擇專輯</option>
                     </select>
-                    <a asp-controller="Albums" asp-action="Create" target="_blank"
-                       class="btn btn-secondary flex-shrink-0">新增專輯</a>
+                    <a asp-controller="Albums" asp-action="Create" target="_blank" class="btn btn-success flex-shrink-0">新增專輯</a>
                 </div>
-                <span asp-validation-for="AlbumId" class="text-danger"></span>
+                <span asp-validation-for="SelectedAlbumIdList" class="text-danger"></span>
             </div>
 
             <div class="form-group my-2">
@@ -51,6 +50,7 @@
     </div>
 </div>
 
+@* TODO: move this to common section of Views *@
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");

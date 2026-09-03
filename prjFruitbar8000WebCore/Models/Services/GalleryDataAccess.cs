@@ -50,22 +50,22 @@ public class GalleryDataAccess
     }
 
     // binding with MVC View Component
-    public async Task<NewSongViewModel> GetCreate(FruitBarDbContext inputContext)
+    public async Task<GallerySongViewModel> GetCreate(FruitBarDbContext inputContext)
     {
         var qArtist = inputContext.TArtists.OrderBy(x => x.FArtistName);
         var qAlbum = inputContext.TAlbums.OrderBy(x => x.FAlbumName);
 
-        NewSongViewModel nsvm = new NewSongViewModel()
+        GallerySongViewModel nsvm = new GallerySongViewModel()
         {
             SongName = String.Empty,
-            ArtistId = null,
-            AlbumId = null,
-            ArtistList = await qArtist.Select(x => new SelectListItem()
+            SelectedArtistIdList = new List<int>(),
+            SelectedAlbumIdList = new List<int>(),
+            OptionArtistIdList = await qArtist.Select(x => new SelectListItem()
             {
                 Value = x.FArtistId.ToString(),
                 Text = x.FArtistName
             }).ToListAsync(),
-            AlbumList = await qAlbum.Select(x => new SelectListItem()
+            OptionAlbumIdList = await qAlbum.Select(x => new SelectListItem()
             {
                 Value = x.FAlbumId.ToString(),
                 Text = x.FAlbumName
@@ -75,7 +75,7 @@ public class GalleryDataAccess
         return nsvm;
     }
 
-    public async Task PostCreate(NewSongViewModel nsvmSent, FruitBarDbContext inputContext)
+    public async Task PostCreate(GallerySongViewModel nsvmSent, FruitBarDbContext inputContext)
         {
             if ((nsvmSent is null)
             || string.IsNullOrWhiteSpace(nsvmSent.SongName))
@@ -86,48 +86,41 @@ public class GalleryDataAccess
             {
                 FSongName = nsvmSent.SongName,
             };
-            if (nsvmSent.ArtistId is not null)
+            if (nsvmSent.SelectedAlbumIdList is null || 
+                nsvmSent.SelectedArtistIdList is null)
+            {
+                return;
+            }
+            foreach (int artistid in nsvmSent.SelectedArtistIdList)
             {
                 createdSong.TArtistsSongs.Add(new TArtistsSong()
                 {
-                    FArtistId = (int)nsvmSent.ArtistId,
+                    FArtistId = artistid,
                 });
             }
 
             // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
-            if (nsvmSent.AlbumId is not null)
+            foreach (int albumid in nsvmSent.SelectedAlbumIdList)
             {
-                int relatedAlbumid = (int)nsvmSent.AlbumId;
+                int relatedAlbumid = albumid;
                 var selectedAlbum = await inputContext.TAlbums
                     .Where(x => x.FAlbumId == relatedAlbumid)
                     .Include(x => x.TSongsAlbums)  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
                     .FirstOrDefaultAsync();
-                if (selectedAlbum is not null)
+                if (selectedAlbum is null)
                 {
-                    var usedTrackIdinAlbum = selectedAlbum
-                        .TSongsAlbums.Select(x => x.FTrackNumber).ToList();
-
-                    int assumedTrackNumber = 1;
-                    if (usedTrackIdinAlbum.Count() > 0)
-                    {
-                        foreach (var num in usedTrackIdinAlbum)
-                        {
-                            while (assumedTrackNumber == num)
-                            {
-                                assumedTrackNumber++;
-                            }
-                        }
-                    }
-                    createdSong.TSongsAlbums.Add(new TSongsAlbum()
-                    {
-                        FAlbumId = relatedAlbumid,
-                        FTrackNumber = assumedTrackNumber
-                    });
+                    continue;
                 }
+                int assumedTrackNumber = AssumedTrackNumberInAlbum(selectedAlbum);
+                createdSong.TSongsAlbums.Add(new TSongsAlbum()
+                {
+                    FAlbumId = relatedAlbumid,
+                    FTrackNumber = assumedTrackNumber
+                });
             }
-            inputContext.TSongs.Add(createdSong);
-            inputContext.SaveChanges();
-        }
+    inputContext.TSongs.Add(createdSong);
+        inputContext.SaveChanges();
+    }
 
     // binding with MVC View Component
     public async Task<GallerySongViewModel> GetEdit(TSong editSong, FruitBarDbContext inputContext)
@@ -225,36 +218,20 @@ public class GalleryDataAccess
                 var existRelationInList = tobeUpdate.TSongsAlbums
                     .Where(x => x.FAlbumId == selectedAlbum.FAlbumId).FirstOrDefault();
 
-                // 如果沒有重複關聯, 新增關聯
-                if (existRelationInList is null)
+                if (existRelationInList is not null)
                 {
-                    // FIXED: TSongsAlbums 沒有保證排序；目前逐項 while 的結果受列舉順序影響，
-                    // 例如曲號 [2, 1] 會算出已被占用的 2，儲存時撞上 (AlbumId, TrackNumber) 唯一索引。
-                    // 即使改為正確的空號計算，並行請求仍可能選到同一曲號，儲存時仍須處理唯一限制衝突。
-                    var usedTrackIdinAlbum = selectedAlbum.TSongsAlbums
-                        .OrderBy(x => x.FTrackNumber)
-                        .Select(x => x.FTrackNumber)
-                        .ToList();
-
-                    int assumedTrackNumber = 1;
-                    if (usedTrackIdinAlbum.Count() > 0)
-                    {
-                        foreach (var num in usedTrackIdinAlbum)
-                        {
-                            while (assumedTrackNumber == num)
-                            {
-                                assumedTrackNumber++;
-                            }
-                        }
-                    }
-
-                    albumsTobeAdd.Add(new TSongsAlbum()
-                    {
-                        FAlbumId = selectedAlbum.FAlbumId,
-                        FTrackNumber = assumedTrackNumber,
-                        FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
-                    });
+                    continue;
                 }
+                
+                // 如果沒有重複關聯, 新增關聯
+                int assumedTrackNumber = AssumedTrackNumberInAlbum(selectedAlbum);
+
+                albumsTobeAdd.Add(new TSongsAlbum()
+                {
+                    FAlbumId = selectedAlbum.FAlbumId,
+                    FTrackNumber = assumedTrackNumber,
+                    FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
+                });
             }
             // FIXED: 不可在 foreach 枚舉 TSongsAlbums 時修改同一集合，否則會拋出 Collection was modified；
             // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
@@ -295,5 +272,28 @@ public class GalleryDataAccess
         InputContext.Remove(songToBeDeleted);
         await InputContext.SaveChangesAsync();
         return;
+    }
+
+    // section for private methods
+    private static int AssumedTrackNumberInAlbum(TAlbum selectedAlbum)
+    {
+        // FIXED: TSongsAlbums 沒有保證排序；目前逐項 while 的結果受列舉順序影響，
+        // 例如曲號 [2, 1] 會算出已被占用的 2，儲存時撞上 (AlbumId, TrackNumber) 唯一索引。
+        // 即使改為正確的空號計算，並行請求仍可能選到同一曲號，儲存時仍須處理唯一限制衝突。
+        List<int> usedTrackIdinAlbum = selectedAlbum
+            .TSongsAlbums
+            .OrderBy(x => x.FTrackNumber)
+            .Select(x => x.FTrackNumber)
+            .ToList();
+        int assumedTrackNumber = 1;
+        foreach (int num in usedTrackIdinAlbum)
+        {
+            while (assumedTrackNumber == num)
+            {
+                assumedTrackNumber++;
+            }
+        }
+
+        return assumedTrackNumber;
     }
 }
