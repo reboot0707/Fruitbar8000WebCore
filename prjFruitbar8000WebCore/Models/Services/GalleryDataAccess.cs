@@ -129,6 +129,7 @@ public class GalleryDataAccess
             inputContext.SaveChanges();
         }
 
+    // binding with MVC View Component
     public async Task<GallerySongViewModel> GetEdit(TSong editSong, FruitBarDbContext inputContext)
     {
         var selListArtist = await inputContext.TArtists
