@@ -90,12 +90,8 @@ public class ArtistsController : Controller
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!TArtistExists(artistWrap.FArtistId))
-            {
-                return RedirectToAction(nameof(Index));
-            }
-
-            throw;
+            // TODO: log error
+            return RedirectToAction(nameof(Index));
         }
 
         return RedirectToAction(nameof(Index));
@@ -125,10 +121,5 @@ public class ArtistsController : Controller
         await _context.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index));
-    }
-
-    private bool TArtistExists(int artistId)
-    {
-        return _context.TArtists.Any(item => item.FArtistId == artistId);
     }
 }

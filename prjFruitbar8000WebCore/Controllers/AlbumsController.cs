@@ -91,12 +91,8 @@ public class AlbumsController : Controller
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!TAlbumExists(albumWrap.FAlbumId))
-            {
-                return RedirectToAction(nameof(Index));
-            }
-
-            throw;
+            // TODO: log error
+            return RedirectToAction(nameof(Index));
         }
 
         return RedirectToAction(nameof(Index));
@@ -127,10 +123,5 @@ public class AlbumsController : Controller
         await _context.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index));
-    }
-
-    private bool TAlbumExists(int albumId)
-    {
-        return _context.TAlbums.Any(item => item.FAlbumId == albumId);
     }
 }
