@@ -100,9 +100,10 @@ public class ArtistsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost]
     public async Task<IActionResult> Delete(int? id)
     {
-        if (id == null)
+        if (id is null)
         {
             return RedirectToAction(nameof(Index));
         }
@@ -110,7 +111,7 @@ public class ArtistsController : Controller
         TArtist? artist = await _context.TArtists
             .FirstOrDefaultAsync(item => item.FArtistId == id);
 
-        if (artist == null)
+        if (artist is null)
         {
             return RedirectToAction(nameof(Index));
         }

@@ -7,10 +7,10 @@
 <h1>專輯清單</h1>
 
 <p>
-    <a asp-action="Create">新增專輯</a>
+    <a asp-action="Create" class="btn btn-success">新增專輯</a>
 </p>
 
-<table class="table">
+<table class="table align-middle">
     <thead>
         <tr>
             <th>@Html.DisplayNameFor(model => model.FAlbumName)</th>
@@ -27,9 +27,10 @@
                 <td>@Html.DisplayFor(modelItem => item.FReleaseDate)</td>
                 <td>@Html.DisplayFor(modelItem => item.FAlbumType)</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.FAlbumId">編輯</a> |
-                    <a asp-action="Delete" asp-route-id="@item.FAlbumId"
-                       onclick="return confirm('確定要永久刪除這張專輯嗎？');">刪除</a>
+                    <a asp-action="Edit" asp-route-id="@item.FAlbumId" class="btn btn-secondary">編輯</a>
+                    <form asp-action="Delete" asp-route-id="@item.FAlbumId" method="post" style="display: inline;">
+                        <button type="submit" onclick="return confirm('確定要永久刪除這張專輯嗎？');" class="btn btn-danger">刪除</button>
+                    </form>
                 </td>
             </tr>
         }

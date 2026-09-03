@@ -46,7 +46,7 @@ public class AlbumsController : Controller
 
     public async Task<IActionResult> Edit(int? id)
     {
-        if (id == null)
+        if (id is null)
         {
             return RedirectToAction(nameof(Index));
         }
@@ -55,7 +55,7 @@ public class AlbumsController : Controller
             .AsNoTracking()
             .FirstOrDefaultAsync(item => item.FAlbumId == id);
 
-        if (album == null)
+        if (album is null)
         {
             return RedirectToAction(nameof(Index));
         }
@@ -75,7 +75,7 @@ public class AlbumsController : Controller
         TAlbum? album = await _context.TAlbums
             .FirstOrDefaultAsync(item => item.FAlbumId == albumWrap.FAlbumId);
 
-        if (album == null)
+        if (album is null)
         {
             return RedirectToAction(nameof(Index));
         }
@@ -101,9 +101,10 @@ public class AlbumsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost]
     public async Task<IActionResult> Delete(int? id)
     {
-        if (id == null)
+        if (id is null)
         {
             return RedirectToAction(nameof(Index));
         }
@@ -111,7 +112,7 @@ public class AlbumsController : Controller
         TAlbum? album = await _context.TAlbums
             .FirstOrDefaultAsync(item => item.FAlbumId == id);
 
-        if (album == null)
+        if (album is null)
         {
             return RedirectToAction(nameof(Index));
         }

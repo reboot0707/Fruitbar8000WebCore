@@ -7,10 +7,10 @@
 <h1>創作者清單</h1>
 
 <p>
-    <a asp-action="Create">新增創作者</a>
+    <a asp-action="Create" class="btn btn-success">新增創作者</a>
 </p>
 
-<table class="table">
+<table class="table align-middle">
     <thead>
         <tr>
             <th>@Html.DisplayNameFor(model => model.FArtistName)</th>
@@ -25,9 +25,10 @@
                 <td>@Html.DisplayFor(modelItem => item.FArtistName)</td>
                 <td>@Html.DisplayFor(modelItem => item.FArtistType)</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.FArtistId">編輯</a> |
-                    <a asp-action="Delete" asp-route-id="@item.FArtistId"
-                       onclick="return confirm('確定要永久刪除這位創作者嗎？');">刪除</a>
+                    <a asp-action="Edit" asp-route-id="@item.FArtistId" class="btn btn-secondary">編輯</a>
+                    <form asp-action="Delete" asp-route-id="@item.FArtistId" method="post" style="display: inline;">
+                        <button type="submit" onclick="return confirm('確定要永久刪除這位創作者嗎？');" class="btn btn-danger">刪除</button>
+                    </form>
                 </td>
             </tr>
         }
