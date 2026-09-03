@@ -49,7 +49,7 @@ public class GalleryDataAccess
         return querylistview;
     }
 
-
+    // binding with MVC View Component
     public async Task<NewSongViewModel> GetCreate(FruitBarDbContext inputContext)
     {
         var qArtist = inputContext.TArtists.OrderBy(x => x.FArtistName);
