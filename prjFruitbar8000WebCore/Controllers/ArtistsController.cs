@@ -46,7 +46,7 @@ public class ArtistsController : Controller
 
     public async Task<IActionResult> Edit(int? id)
     {
-        if (id == null)
+        if (id is null)
         {
             return RedirectToAction(nameof(Index));
         }
@@ -55,7 +55,7 @@ public class ArtistsController : Controller
             .AsNoTracking()
             .FirstOrDefaultAsync(item => item.FArtistId == id);
 
-        if (artist == null)
+        if (artist is null)
         {
             return RedirectToAction(nameof(Index));
         }
@@ -75,7 +75,7 @@ public class ArtistsController : Controller
         TArtist? artist = await _context.TArtists
             .FirstOrDefaultAsync(item => item.FArtistId == artistWrap.FArtistId);
 
-        if (artist == null)
+        if (artist is null)
         {
             return RedirectToAction(nameof(Index));
         }
