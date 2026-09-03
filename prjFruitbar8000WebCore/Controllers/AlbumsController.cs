@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.Entities;
+using prjFruitbar8000WebCore.Models.Services;
 using prjFruitbar8000WebCore.Models.Wraps;
 
 namespace prjFruitbar8000WebCore.Controllers;
@@ -105,6 +106,11 @@ public class AlbumsController : Controller
     public async Task<IActionResult> Delete(int? id)
     {
         if (id is null)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (await new CheckNavigate(_context).IsAlbumHaveSong((int)id))
         {
             return RedirectToAction(nameof(Index));
         }
