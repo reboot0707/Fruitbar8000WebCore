@@ -3,9 +3,9 @@ namespace prjFruitbar8000WebCore.Models.DTOs;
 
 public class ArtistsDTO
 {
-    public int FArtistId { get; set; }
+    public int id { get; set; }
 
-    public string FArtistName { get; set; } = null!;
+    public string artistName { get; set; } = null!;
 
-    public string? FArtistType { get; set; }
+    public string? artistType { get; set; }
 }
