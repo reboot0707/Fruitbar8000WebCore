@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using prjFruitbar8000WebCore.Models.Entities;
 using prjFruitbar8000WebCore.Models.ViewModels;
 
 namespace prjFruitbar8000WebCore.Models.Services;
@@ -47,11 +49,91 @@ public class GalleryDataAccess
         return querylistview;
     }
 
-    public async Task<bool> Delete(int? songId, FruitBarDbContext InputContext)
+
+    public async Task<NewSongViewModel> GetCreate(FruitBarDbContext inputContext)
+    {
+        var qArtist = inputContext.TArtists.OrderBy(x => x.FArtistName);
+        var qAlbum = inputContext.TAlbums.OrderBy(x => x.FAlbumName);
+
+        NewSongViewModel nsvm = new NewSongViewModel()
+        {
+            SongName = String.Empty,
+            ArtistId = null,
+            AlbumId = null,
+            ArtistList = await qArtist.Select(x => new SelectListItem()
+            {
+                Value = x.FArtistId.ToString(),
+                Text = x.FArtistName
+            }).ToListAsync(),
+            AlbumList = await qAlbum.Select(x => new SelectListItem()
+            {
+                Value = x.FAlbumId.ToString(),
+                Text = x.FAlbumName
+            })
+            .ToListAsync()
+        };
+        return nsvm;
+    }
+
+    public async Task PostCreate(NewSongViewModel nsvmSent, FruitBarDbContext inputContext)
+        {
+            if ((nsvmSent is null)
+            || string.IsNullOrWhiteSpace(nsvmSent.SongName))
+            {
+                return;
+            }
+            var createdSong = new TSong()
+            {
+                FSongName = nsvmSent.SongName,
+            };
+            if (nsvmSent.ArtistId is not null)
+            {
+                createdSong.TArtistsSongs.Add(new TArtistsSong()
+                {
+                    FArtistId = (int)nsvmSent.ArtistId,
+                });
+            }
+
+            // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
+            if (nsvmSent.AlbumId is not null)
+            {
+                int relatedAlbumid = (int)nsvmSent.AlbumId;
+                var selectedAlbum = await inputContext.TAlbums
+                    .Where(x => x.FAlbumId == relatedAlbumid)
+                    .Include(x => x.TSongsAlbums)  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
+                    .FirstOrDefaultAsync();
+                if (selectedAlbum is not null)
+                {
+                    var usedTrackIdinAlbum = selectedAlbum
+                        .TSongsAlbums.Select(x => x.FTrackNumber).ToList();
+
+                    int assumedTrackNumber = 1;
+                    if (usedTrackIdinAlbum.Count() > 0)
+                    {
+                        foreach (var num in usedTrackIdinAlbum)
+                        {
+                            while (assumedTrackNumber == num)
+                            {
+                                assumedTrackNumber++;
+                            }
+                        }
+                    }
+                    createdSong.TSongsAlbums.Add(new TSongsAlbum()
+                    {
+                        FAlbumId = relatedAlbumid,
+                        FTrackNumber = assumedTrackNumber
+                    });
+                }
+            }
+            inputContext.TSongs.Add(createdSong);
+            inputContext.SaveChanges();
+        }
+
+    public async Task Delete(int? songId, FruitBarDbContext InputContext)
     {
         if(songId is null)
         { 
-            return false;
+            return;
         }
         var songToBeDeleted = await InputContext.TSongs
             .Include(x => x.TSongsAlbums)
@@ -59,12 +141,12 @@ public class GalleryDataAccess
             .FirstOrDefaultAsync(x => x.FSongId == songId);
         if (songToBeDeleted is null) // 開始查詢
         {
-            return false;
+            return;
         }
         InputContext.RemoveRange(songToBeDeleted.TArtistsSongs);
         InputContext.RemoveRange(songToBeDeleted.TSongsAlbums);
         InputContext.Remove(songToBeDeleted);
         await InputContext.SaveChangesAsync();
-        return true;
+        return;
     }
 }

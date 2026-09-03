@@ -37,83 +37,14 @@ namespace prjFruitbar8000WebCore.Controllers
 
         public async Task<IActionResult> Create()
         {
-            var qArtist = _context.TArtists.OrderBy(x => x.FArtistName);
-            var qAlbum = _context.TAlbums.OrderBy(x => x.FAlbumName);
-
-            NewSongViewModel nsvm = new NewSongViewModel()
-            {
-                SongName = String.Empty,
-                ArtistId = null,
-                AlbumId = null,
-                ArtistList = await qArtist.Select(x => new SelectListItem()
-                {
-                    Value = x.FArtistId.ToString(),
-                    Text = x.FArtistName
-                }).ToListAsync(),
-                AlbumList = await qAlbum.Select(x => new SelectListItem()
-                {
-                    Value = x.FAlbumId.ToString(),
-                    Text = x.FAlbumName
-                })
-                .ToListAsync()
-            };
+            NewSongViewModel nsvm = await new GalleryDataAccess().GetCreate(_context);
             return View(nsvm);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(NewSongViewModel nsvmSent)
         {
-            if ((nsvmSent is null)
-            || string.IsNullOrWhiteSpace(nsvmSent.SongName))
-            {
-                return RedirectToAction(nameof(List));
-            }
-
-            var createdSong = new TSong()
-            {
-                FSongName = nsvmSent.SongName,
-            };
-            if (nsvmSent.ArtistId is not null)
-            {
-                createdSong.TArtistsSongs.Add(new TArtistsSong()
-                {
-                    FArtistId = (int)nsvmSent.ArtistId,
-                });
-            }
-
-            // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
-            if (nsvmSent.AlbumId is not null)
-            {
-                int relatedAlbumid = (int)nsvmSent.AlbumId;
-                var selectedAlbum = await _context.TAlbums
-                    .Where(x => x.FAlbumId == relatedAlbumid)
-                    .Include(x => x.TSongsAlbums)  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
-                    .FirstOrDefaultAsync();
-                if (selectedAlbum is not null)
-                {
-                    var usedTrackIdinAlbum = selectedAlbum
-                        .TSongsAlbums.Select(x => x.FTrackNumber).ToList();
-
-                    int assumedTrackNumber = 1;
-                    if (usedTrackIdinAlbum.Count() > 0)
-                    {
-                        foreach (var num in usedTrackIdinAlbum)
-                        {
-                            while (assumedTrackNumber == num)
-                            {
-                                assumedTrackNumber++;
-                            }
-                        }
-                    }
-                    createdSong.TSongsAlbums.Add(new TSongsAlbum()
-                    {
-                        FAlbumId = relatedAlbumid,
-                        FTrackNumber = assumedTrackNumber
-                    });
-                }
-            }
-            _context.TSongs.Add(createdSong);
-            _context.SaveChanges();
+            await new GalleryDataAccess().PostCreate(nsvmSent, _context);
             return RedirectToAction(nameof(List));
         }
 
