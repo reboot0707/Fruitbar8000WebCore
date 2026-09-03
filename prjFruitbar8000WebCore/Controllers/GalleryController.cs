@@ -1,11 +1,6 @@
-using System.IO.Compression;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using NuGet.Packaging;
 using prjFruitbar8000WebCore.Models;
-using prjFruitbar8000WebCore.Models.Entities;
 using prjFruitbar8000WebCore.Models.Services;
 using prjFruitbar8000WebCore.Models.ViewModels;
 
