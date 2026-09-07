@@ -25,7 +25,7 @@ namespace prjFruitbar8000WebCore.Controllers
             // 修改前作邏輯, 參考某音樂平台, 先用歌曲為單位列表
             List<GalleryListViewModel> queryList = new List<GalleryListViewModel>();
 
-            queryList = new GalleryDataAccess().List(queryList, _context);
+            queryList = await new GalleryDataAccess().List(queryList, _context);
 
             return View(queryList);
         }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Entities;
 using prjFruitbar8000WebCore.Models.ViewModels;
 
@@ -10,36 +11,28 @@ public class GalleryDataAccess
     public GalleryDataAccess() {} //constructor
 
     // input: (1) empty "quertlistview" data, (2) DBcontext
-    public List<GalleryListViewModel> List(List<GalleryListViewModel> querylistview, FruitBarDbContext inputContext)
+    public async Task<List<GalleryListViewModel>> List(List<GalleryListViewModel> querylistview, FruitBarDbContext inputContext)
     {     
-        var songlistq = inputContext.TSongs
-                .OrderBy(x => x.FSongName)
-                .Select(x => new
-                {
-                    x.FSongId,
-                    x.FSongName,
-                    ArtistNames = x.TArtistsSongs
-                        .OrderBy(y => y.FArtist.FArtistName)
-                        .Select(y => y.FArtist.FArtistName),
-                    AlbumNames = x.TSongsAlbums
-                        .OrderBy(y => y.FAlbum.FAlbumName)
-                        .Select(y => y.FAlbum.FAlbumName)
-                });
+        IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
         // NEXT-TODO: use "SelectMany" to replace multi-layer loop
-        foreach (var song in songlistq)
+        await foreach (var song in songlistq.AsAsyncEnumerable())
         {
-            foreach (var songalbum in song.AlbumNames)
+            if (song.albumNames is null)
             {
-                List<string> ArtistNameList = new List<string>();
-                foreach (var songartist in song.ArtistNames)
+                continue;
+            }
+            foreach (var songalbum in song.albumNames)
+            {
+                if (song.artistNames is null)
                 {
-                    ArtistNameList.Add(songartist);
+                    continue;
                 }
+                List<string> ArtistNameList = [.. song.artistNames];
                 GalleryListViewModel qvm = new GalleryListViewModel()
                 {
-                    id = song.FSongId,
-                    SongName = song.FSongName,
+                    id = song.id,
+                    SongName = song.songName,
                     ArtistNames = String.Join('、', ArtistNameList),
                     AlbumName = songalbum
                 };
@@ -47,6 +40,46 @@ public class GalleryDataAccess
             }
         }
         return querylistview;
+    }
+
+    public async Task<List<GallerySongsDTO>> ListApi(List<GallerySongsDTO> querylistDTOs, FruitBarDbContext inputContext)
+    {
+        IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
+
+        // NEXT-TODO: use "SelectMany" to replace multi-layer loop
+        await foreach (var song in songlistq.AsAsyncEnumerable())
+        {
+            if (song.albumNames is null)
+            {
+                continue;
+            }
+            foreach (var songalbum in song.albumNames)
+            {
+                if (song.artistNames is null)
+                {
+                    continue;
+                }
+                querylistDTOs.Add(song);
+            }
+        }
+        return querylistDTOs;
+    }
+
+    private static IQueryable<GallerySongsDTO> GetGallerySongsRaw(FruitBarDbContext inputContext)
+    {
+        return inputContext.TSongs
+                .OrderBy(x => x.FSongId)
+                .Select(x => new GallerySongsDTO
+                {
+                    id = x.FSongId,
+                    songName = x.FSongName,
+                    artistNames = x.TArtistsSongs
+                        .OrderBy(y => y.FArtist.FArtistName)
+                        .Select(y => y.FArtist.FArtistName),
+                    albumNames = x.TSongsAlbums
+                        .OrderBy(y => y.FAlbum.FAlbumName)
+                        .Select(y => y.FAlbum.FAlbumName)
+                });
     }
 
     // binding with MVC View Component
