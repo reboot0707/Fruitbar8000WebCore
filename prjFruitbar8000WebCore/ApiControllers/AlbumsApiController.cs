@@ -12,9 +12,6 @@ namespace prjFruitbar8000WebCore.ApiControllers
     [ApiController]
     public class AlbumsApiController : ControllerBase
     {
-        // TODO: 移動到共用區域
-        private readonly string message404 = "{ \"message\": \"Not Found\" }";
-        private readonly string messagedeleted = "{ \"message\": \"Deleted\" }";
 
         private readonly FruitBarDbContext _context;
         public AlbumsApiController(FruitBarDbContext context)
@@ -68,7 +65,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
             }).FirstOrDefaultAsync();
             if (album is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             return Ok(album);
         }
@@ -107,14 +104,14 @@ namespace prjFruitbar8000WebCore.ApiControllers
         {
             if (id is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             TAlbum? album = await _context.TAlbums
                 .Where(x => x.FAlbumId == id)
                 .FirstOrDefaultAsync();
             if (album is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             album.FAlbumName = albumsDTO.albumName;
             album.FAlbumType = albumsDTO.albumType;
@@ -138,7 +135,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         {
             if (id is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             if (await new CheckNavigate(_context).IsAlbumHaveSong((int)id))
             {
@@ -148,7 +145,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
                 .FirstOrDefaultAsync(x => x.FAlbumId == id);
             if (album is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             _context.TAlbums.Remove(album);
             try
@@ -159,7 +156,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
             {
                 return Problem(ex.Message);
             }
-            return Ok(messagedeleted);
+            return Ok(MsgDicionary.messagedeleted);
         }
     }
 }

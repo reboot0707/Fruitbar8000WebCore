@@ -12,9 +12,6 @@ namespace prjFruitbar8000WebCore.ApiControllers
     [ApiController]
     public class ArtistsApiController : ControllerBase
     {
-        // TODO: 移動到共用區域
-        private readonly string message404 = "{ \"message\": \"Not Found\" }";
-        private readonly string messagedeleted = "{ \"message\": \"Deleted\" }";
         private readonly FruitBarDbContext _context;
 
         public ArtistsApiController(FruitBarDbContext context)
@@ -66,7 +63,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
             }).FirstOrDefaultAsync();
             if (artist is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             return Ok(artist);
         }
@@ -105,14 +102,14 @@ namespace prjFruitbar8000WebCore.ApiControllers
         {
             if (id is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             TArtist? artist = await _context.TArtists
                 .Where(x => x.FArtistId == id)
                 .FirstOrDefaultAsync();
             if (artist is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             artist.FArtistName = artistsDTO.artistName;
             artist.FArtistType = artistsDTO.artistType;
@@ -135,7 +132,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         {
             if (id is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             if (await new CheckNavigate(_context).IsArtistHaveSong((int)id))
             {
@@ -145,7 +142,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
                 .FirstOrDefaultAsync(x => x.FArtistId == id);
             if (artist is null)
             {
-                return NotFound(message404);
+                return NotFound(MsgDicionary.message404);
             }
             _context.TArtists.Remove(artist);
             try
@@ -156,7 +153,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
             {
                 return Problem(ex.Message);
             }
-            return Ok(messagedeleted);
+            return Ok(MsgDicionary.messagedeleted);
         }
     }
 }
