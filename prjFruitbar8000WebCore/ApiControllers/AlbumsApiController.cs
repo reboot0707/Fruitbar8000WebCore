@@ -8,7 +8,7 @@ using prjFruitbar8000WebCore.Models.Services;
 
 namespace prjFruitbar8000WebCore.ApiControllers
 {
-    [Route("api/v1/albums")]
+    [Route("apis/v1/albums")]
     [ApiController]
     public class AlbumsApiController : ControllerBase
     {
