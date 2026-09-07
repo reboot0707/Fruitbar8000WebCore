@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Entities;
+using prjFruitbar8000WebCore.Models.Services;
 using prjFruitbar8000WebCore.Models.Wraps;
 
 namespace prjFruitbar8000WebCore.ApiControllers
@@ -42,6 +43,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         public async Task<IActionResult> Get(int id)
         {
             ArtistsDTO? artist = await _context.TArtists
+            .OrderBy(x => x.FArtistId)
             .Where(x => x.FArtistId == id)
             .Select(x => new ArtistsDTO()
             {
@@ -113,10 +115,18 @@ namespace prjFruitbar8000WebCore.ApiControllers
             return Ok(artistsDTO);
         }
 
-        // DELETE api/<ArtistsApiController>/5
+                // DELETE api/<ArtistsApiController>/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int? id)
         {
+            if (id is null)
+            {
+                return NotFound(message404);
+            }
+            if (await new CheckNavigate(_context).IsArtistHaveSong((int)id))
+            {
+                return Forbid("{ \"message\": \"Still Have Songs related to this Artist.\" }");
+            }
             TArtist? artist = await _context.TArtists
                 .Where(x => x.FArtistId == id)
                 .FirstOrDefaultAsync();
