@@ -20,7 +20,7 @@ public class CheckNavigate
         return true;
     }
 
-        public async Task<bool> IsAlbumHaveSong(int id)
+    public async Task<bool> IsAlbumHaveSong(int id)
     {
         var haveSong = await _inputContext.TSongsAlbums
             .AsNoTracking()

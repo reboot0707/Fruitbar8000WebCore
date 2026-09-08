@@ -181,48 +181,38 @@ public class GalleryDataAccess
 
         tobeUpdate.FSongName = gsvm.SongName;
 
-        List<TArtistsSong> artistTobeAdd = new List<TArtistsSong>();
-        List<TArtistsSong> artistTobeRemoved = new List<TArtistsSong>();
+        UpdateArtistsSong(gsvm.SelectedArtistIdList, tobeUpdate, InputContext);
+        await UpdateSongAlbums(gsvm.SelectedAlbumIdList, tobeUpdate, InputContext);
 
-        foreach (var artistid in gsvm.SelectedArtistIdList)
+        try
         {
-            // 檢查是否已有重複關聯
-            var existRelationInList = tobeUpdate.TArtistsSongs
-                .FirstOrDefault(x => x.FArtistId == artistid);
-
-            // 如果沒有重複關聯, 新增關聯
-            if (existRelationInList is null)
-            {
-                // 先存在 List 裡面，全部確認後直接對 DbSet 操作
-                artistTobeAdd.Add(new TArtistsSong()
-                {
-                    FArtistId = artistid,
-                    FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
-                });
-            }
+            await InputContext.SaveChangesAsync();
+            return true;
         }
-        // FIXED: 不可在 foreach 枚舉 TArtistsSongs 時修改同一集合，否則會拋出 Collection was modified；
-        // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
-        artistTobeRemoved = tobeUpdate.TArtistsSongs.Where(x => !gsvm.SelectedArtistIdList.Contains(x.FArtistId)).ToList();
+        catch (Exception)
+        {
+            // NEXT-TODO: log error to log file
+            return false;
+        }
 
-        InputContext.TArtistsSongs.AddRange(artistTobeAdd);
-        InputContext.TArtistsSongs.RemoveRange(artistTobeRemoved);
+    }
 
+    private static async Task UpdateSongAlbums(List<int> selectedId, TSong tobeUpdate, FruitBarDbContext InputContext)
+    {
         List<TSongsAlbum> albumsTobeAdd = new List<TSongsAlbum>();
         List<TSongsAlbum> albumsTobeRemoved = new List<TSongsAlbum>();
 
         var selectedAlbumList = await InputContext.TAlbums
-            .Where(x => gsvm.SelectedAlbumIdList.Contains(x.FAlbumId))
+            .Where(x => selectedId.Contains(x.FAlbumId))
             .Include(x => x.TSongsAlbums)
             .ToListAsync();  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
 
         foreach (var selectedAlbum in selectedAlbumList)
         {
             // 檢查是否已有重複關聯
-            var existRelationInList = tobeUpdate.TSongsAlbums
-                .Where(x => x.FAlbumId == selectedAlbum.FAlbumId).FirstOrDefault();
-
-            if (existRelationInList is not null)
+            bool alreadyLinked = tobeUpdate.TSongsAlbums
+                .Any(x => x.FAlbumId == selectedAlbum.FAlbumId);
+            if (alreadyLinked)
             {
                 continue;
             }
@@ -239,22 +229,43 @@ public class GalleryDataAccess
         }
         // FIXED: 不可在 foreach 枚舉 TSongsAlbums 時修改同一集合，否則會拋出 Collection was modified；
         // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
-        albumsTobeRemoved = tobeUpdate.TSongsAlbums.Where(x => !gsvm.SelectedAlbumIdList.Contains(x.FAlbumId)).ToList();
+        albumsTobeRemoved = tobeUpdate.TSongsAlbums.Where(x => !selectedId.Contains(x.FAlbumId)).ToList();
 
         InputContext.TSongsAlbums.AddRange(albumsTobeAdd);
         InputContext.TSongsAlbums.RemoveRange(albumsTobeRemoved);
+    }
 
-        try
-        {
-            await InputContext.SaveChangesAsync();
-            return true;
-        }
-        catch (Exception)
-        {
-            // NEXT-TODO: log error to log file
-            return false;
-        }
+    private static void UpdateArtistsSong(List<int> selectedId, TSong tobeUpdate, FruitBarDbContext InputContext)
+    {
+        List<TArtistsSong> artistTobeAdd = new List<TArtistsSong>();
+        List<TArtistsSong> artistTobeRemoved = new List<TArtistsSong>();
 
+        foreach (var artistId in selectedId)
+        {
+            // 檢查是否已有重複關聯
+            bool alreadyLinked = tobeUpdate.TArtistsSongs
+                .Any(x => x.FArtistId == artistId);
+
+            // 如果沒有重複關聯, 新增關聯
+            if (alreadyLinked)
+            {
+                continue;
+            }
+            // 先存在 List 裡面，全部確認後直接對 DbSet 操作
+            artistTobeAdd.Add(new TArtistsSong()
+            {
+                FArtistId = artistId,
+                FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
+            });
+        }
+        // FIXED: 不可在 foreach 枚舉 TArtistsSongs 時修改同一集合，否則會拋出 Collection was modified；
+        // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
+        artistTobeRemoved = tobeUpdate.TArtistsSongs
+            .Where(x => !selectedId.Contains(x.FArtistId))
+            .ToList();
+
+        InputContext.TArtistsSongs.AddRange(artistTobeAdd);
+        InputContext.TArtistsSongs.RemoveRange(artistTobeRemoved);
     }
 
     public async Task<ResultDTO> Delete(int? songId,
