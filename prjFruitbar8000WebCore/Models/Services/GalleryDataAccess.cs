@@ -15,15 +15,19 @@ public class GalleryDataAccess
     {
         IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        IQueryable<GalleryListViewModel> querylistview = songlistq.SelectMany(song => song.albumNames,
-            (song, albumName) => new GalleryListViewModel
+        IQueryable<GalleryListViewModel> querylistview = songlistq.SelectMany(song => song.albumIds,
+            (song, albumId) => new GalleryListViewModel
             {
                 id = song.id,
                 SongName = song.songName,
-                ArtistNames = string.Join('、', song.artistNames),
-                AlbumName = albumName
+                ArtistNames = string.Join('、', inputContext.TArtists
+                    .Where(x => song.artistIds.Contains(x.FArtistId))
+                    .Select(x => x.FArtistName)),
+                AlbumName = inputContext.TAlbums
+                    .Where(x => x.FAlbumId == albumId)
+                    .Select(x => x.FAlbumName)
+                    .FirstOrDefault()
             });
-
         return await querylistview.ToListAsync();
     }
 
@@ -31,13 +35,13 @@ public class GalleryDataAccess
     {
         IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        IQueryable<GallerySongsDTO> querylistDTOs = songlistq.SelectMany(song => song.albumNames,
+        IQueryable<GallerySongsDTO> querylistDTOs = songlistq.SelectMany(song => song.albumIds,
             (song, albumName) => new GallerySongsDTO
             {
                 id = song.id,
                 songName = song.songName,
-                artistNames = song.artistNames,
-                albumNames = song.albumNames
+                artistIds = song.artistIds,
+                albumIds = song.albumIds
             });
 
         return await querylistDTOs.ToListAsync();
@@ -76,44 +80,28 @@ public class GalleryDataAccess
         {
             return;
         }
-        var createdSong = new TSong()
-        {
-            FSongName = nsvmSent.SongName,
-        };
         if (nsvmSent.SelectedAlbumIdList is null ||
             nsvmSent.SelectedArtistIdList is null)
         {
             return;
         }
-        foreach (int artistid in nsvmSent.SelectedArtistIdList)
+        GallerySongsDTO nsDTO = new GallerySongsDTO
         {
-            createdSong.TArtistsSongs.Add(new TArtistsSong()
-            {
-                FArtistId = artistid,
-            });
-        }
+            songName = nsvmSent.SongName,
+            artistIds = nsvmSent.SelectedArtistIdList,
+            albumIds = nsvmSent.SelectedAlbumIdList
+        };
+        ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
+    }
 
-        // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
-        foreach (int albumid in nsvmSent.SelectedAlbumIdList)
+    public async Task PostCreateApi(GallerySongsDTO nsDTO, FruitBarDbContext inputContext)
+    {
+        if ((nsDTO is null)
+        || string.IsNullOrWhiteSpace(nsDTO.songName))
         {
-            int relatedAlbumid = albumid;
-            var selectedAlbum = await inputContext.TAlbums
-                .Where(x => x.FAlbumId == relatedAlbumid)
-                .Include(x => x.TSongsAlbums)  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
-                .FirstOrDefaultAsync();
-            if (selectedAlbum is null)
-            {
-                continue;
-            }
-            int assumedTrackNumber = AssumedTrackNumberInAlbum(selectedAlbum);
-            createdSong.TSongsAlbums.Add(new TSongsAlbum()
-            {
-                FAlbumId = relatedAlbumid,
-                FTrackNumber = assumedTrackNumber
-            });
+            return;
         }
-        inputContext.TSongs.Add(createdSong);
-        inputContext.SaveChanges();
+        ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
     }
 
     // binding with MVC View Component
@@ -287,14 +275,63 @@ public class GalleryDataAccess
                 {
                     id = x.FSongId,
                     songName = x.FSongName,
-                    artistNames = x.TArtistsSongs
-                        .OrderBy(y => y.FArtist.FArtistName)
-                        .Select(y => y.FArtist.FArtistName),
-                    albumNames = x.TSongsAlbums
-                        .OrderBy(y => y.FAlbum.FAlbumName)
-                        .Select(y => y.FAlbum.FAlbumName)
+                    artistIds = x.TArtistsSongs
+                        .OrderBy(y => y.FArtist.FArtistId)
+                        .Select(y => y.FArtist.FArtistId),
+                    albumIds = x.TSongsAlbums
+                        .OrderBy(y => y.FAlbum.FAlbumId)
+                        .Select(y => y.FAlbum.FAlbumId)
                 });
     }
+
+    private static async Task<ResultDTO> CreateGallerySongCommon(GallerySongsDTO nsDTO, FruitBarDbContext inputContext)
+    {
+        ResultDTO resultDTO = new ResultDTO();
+        
+        var createdSong = new TSong()
+        {
+            FSongName = nsDTO.songName!, // assume nsDTO.songName has value when calling this
+        };
+        foreach (int artistid in nsDTO.artistIds)
+        {
+            createdSong.TArtistsSongs.Add(new TArtistsSong()
+            {
+                FArtistId = artistid,
+            });
+        }
+        // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
+        foreach (int albumid in nsDTO.albumIds)
+        {
+            int relatedAlbumid = albumid;
+            var selectedAlbum = await inputContext.TAlbums
+                .Where(x => x.FAlbumId == relatedAlbumid)
+                .Include(x => x.TSongsAlbums)  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
+                .FirstOrDefaultAsync();
+            if (selectedAlbum is null)
+            {
+                continue;
+            }
+            int assumedTrackNumber = AssumedTrackNumberInAlbum(selectedAlbum);
+            createdSong.TSongsAlbums.Add(new TSongsAlbum()
+            {
+                FAlbumId = relatedAlbumid,
+                FTrackNumber = assumedTrackNumber
+            });
+        }
+        inputContext.TSongs.Add(createdSong);
+        try
+        {
+            inputContext.SaveChanges();
+            resultDTO.isSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            resultDTO.isSuccess = false;
+            resultDTO.statusMessage = ex.Message;
+        }
+        return resultDTO;
+    }
+
 
     // section for private methods
     private static int AssumedTrackNumberInAlbum(TAlbum selectedAlbum)
