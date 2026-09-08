@@ -22,11 +22,11 @@ namespace prjFruitbar8000WebCore.Controllers
         // GET: QueryController
         public async Task<IActionResult> List()
         {
-            // 修改前作邏輯, 參考某音樂平台, 先用歌曲為單位列表
-            List<GalleryListViewModel> queryList = new List<GalleryListViewModel>();
-
-            queryList = await new GalleryDataAccess().List(queryList, _context);
-
+            var queryList = await new GalleryDataAccess().List(_context);
+            if(queryList is null)
+            {
+                return View(new List<GalleryListViewModel>());
+            }
             return View(queryList);
         }
 

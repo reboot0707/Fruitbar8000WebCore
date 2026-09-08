@@ -11,75 +11,36 @@ public class GalleryDataAccess
     public GalleryDataAccess() {} //constructor
 
     // input: (1) empty "quertlistview" data, (2) DBcontext
-    public async Task<List<GalleryListViewModel>> List(List<GalleryListViewModel> querylistview, FruitBarDbContext inputContext)
+    public async Task<List<GalleryListViewModel>> List(FruitBarDbContext inputContext)
     {     
         IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        // NEXT-TODO: use "SelectMany" to replace multi-layer loop
-        await foreach (var song in songlistq.AsAsyncEnumerable())
-        {
-            if (song.albumNames is null)
+        IQueryable<GalleryListViewModel> querylistview = songlistq.SelectMany( song => song.albumNames, 
+            (song, albumName) => new GalleryListViewModel
             {
-                continue;
-            }
-            foreach (var songalbum in song.albumNames)
-            {
-                if (song.artistNames is null)
-                {
-                    continue;
-                }
-                List<string> ArtistNameList = [.. song.artistNames];
-                GalleryListViewModel qvm = new GalleryListViewModel()
-                {
-                    id = song.id,
-                    SongName = song.songName,
-                    ArtistNames = String.Join('、', ArtistNameList),
-                    AlbumName = songalbum
-                };
-                querylistview.Add(qvm);
-            }
-        }
-        return querylistview;
+               id = song.id,
+               SongName = song.songName,
+               ArtistNames = string.Join('、',song.artistNames),
+               AlbumName = albumName
+            });
+
+        return await querylistview.ToListAsync();
     }
 
-    public async Task<List<GallerySongsDTO>> ListApi(List<GallerySongsDTO> querylistDTOs, FruitBarDbContext inputContext)
+    public async Task<List<GallerySongsDTO>> ListApi( FruitBarDbContext inputContext)
     {
         IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        // NEXT-TODO: use "SelectMany" to replace multi-layer loop
-        await foreach (var song in songlistq.AsAsyncEnumerable())
-        {
-            if (song.albumNames is null)
+        IQueryable<GallerySongsDTO> querylistDTOs = songlistq.SelectMany( song => song.albumNames, 
+            (song, albumName) => new GallerySongsDTO
             {
-                continue;
-            }
-            foreach (var songalbum in song.albumNames)
-            {
-                if (song.artistNames is null)
-                {
-                    continue;
-                }
-                querylistDTOs.Add(song);
-            }
-        }
-        return querylistDTOs;
-    }
-
-    private static IQueryable<GallerySongsDTO> GetGallerySongsRaw(FruitBarDbContext inputContext)
-    {
-        return inputContext.TSongs
-                .OrderBy(x => x.FSongId)
-                .Select(x => new GallerySongsDTO
-                {
-                    id = x.FSongId,
-                    songName = x.FSongName,
-                    artistNames = x.TArtistsSongs
-                        .OrderBy(y => y.FArtist.FArtistName)
-                        .Select(y => y.FArtist.FArtistName),
-                    albumNames = x.TSongsAlbums
-                        .OrderBy(y => y.FAlbum.FAlbumName)
-                        .Select(y => y.FAlbum.FAlbumName)
-                });
+               id = song.id,
+               songName = song.songName,
+               artistNames = song.artistNames,
+               albumNames = song.albumNames
+            });
+       
+        return await querylistDTOs.ToListAsync();
     }
 
     // binding with MVC View Component
@@ -305,6 +266,23 @@ public class GalleryDataAccess
         InputContext.Remove(songToBeDeleted);
         await InputContext.SaveChangesAsync();
         return;
+    }
+
+    private static IQueryable<GallerySongsDTO> GetGallerySongsRaw(FruitBarDbContext inputContext)
+    {
+        return inputContext.TSongs
+                .OrderBy(x => x.FSongId)
+                .Select(x => new GallerySongsDTO
+                {
+                    id = x.FSongId,
+                    songName = x.FSongName,
+                    artistNames = x.TArtistsSongs
+                        .OrderBy(y => y.FArtist.FArtistName)
+                        .Select(y => y.FArtist.FArtistName),
+                    albumNames = x.TSongsAlbums
+                        .OrderBy(y => y.FAlbum.FAlbumName)
+                        .Select(y => y.FAlbum.FAlbumName)
+                });
     }
 
     // section for private methods

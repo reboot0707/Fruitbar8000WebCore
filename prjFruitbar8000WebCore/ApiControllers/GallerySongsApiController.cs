@@ -24,9 +24,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            List<GallerySongsDTO> queryList = new List<GallerySongsDTO>();
-
-            queryList = await new GalleryDataAccess().ListApi(queryList, _context);
+            var queryList = await new GalleryDataAccess().ListApi(_context);
 
             return Ok(queryList);
         }

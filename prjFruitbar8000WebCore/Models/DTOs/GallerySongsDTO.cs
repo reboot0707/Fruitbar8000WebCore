@@ -1,4 +1,3 @@
-
 namespace prjFruitbar8000WebCore.Models.DTOs;
 
 public class GallerySongsDTO
@@ -7,6 +6,6 @@ public class GallerySongsDTO
 
     public string? songName { get; set; }
 
-    public IEnumerable<string>? artistNames { get; set; }
-    public IEnumerable<string>? albumNames { get; set; }
+    public IEnumerable<string> artistNames { get; set; } = [];
+    public IEnumerable<string> albumNames { get; set; } = [];
 }
