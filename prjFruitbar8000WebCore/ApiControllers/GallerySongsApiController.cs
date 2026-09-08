@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Services;
@@ -73,7 +74,13 @@ namespace prjFruitbar8000WebCore.ApiControllers
             {
                 return NotFound(MsgDicionary.message404);
             }
-            var songToBeUpdated = _context.TSongs.FirstOrDefault(x => x.FSongId == id);
+            // Note: (Why use `.Include()`) 
+            // 此查詢必須一併載入 TArtistsSongs 與 TSongsAlbums。導覽集合雖已初始化但未代表資料庫內容，
+            // 因此 PostEdit() 的 existRelationInList 會把既有關聯誤判為不存在，最後 INSERT 時撞上複合唯一索引。
+            var songToBeUpdated = _context.TSongs
+                .Include(x => x.TArtistsSongs)
+                .Include(x => x.TSongsAlbums)
+                .FirstOrDefault(x => x.FSongId == id);
             if (songToBeUpdated is null)
             {
                 return NotFound(MsgDicionary.message404);
