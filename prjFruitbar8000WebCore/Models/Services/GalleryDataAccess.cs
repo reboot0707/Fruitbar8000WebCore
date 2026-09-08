@@ -196,6 +196,33 @@ public class GalleryDataAccess
         }
     }
 
+    public async Task<ResultDTO> PostEditApi(GallerySongsDTO gsDTO,
+        TSong tobeUpdate,
+        FruitBarDbContext InputContext)
+    {
+        if (gsDTO.artistIds is null ||
+            gsDTO.albumIds is null ||
+            string.IsNullOrWhiteSpace(gsDTO.songName))
+        {
+            return new ResultDTO(){ isSuccess = false, statusMessage = "Not Found"};
+        }
+
+        tobeUpdate.FSongName = gsDTO.songName;
+
+        UpdateArtistsSong(gsDTO.artistIds, tobeUpdate, InputContext);
+        await UpdateSongAlbums(gsDTO.albumIds, tobeUpdate, InputContext);
+
+        try
+        {
+            await InputContext.SaveChangesAsync();
+            return new ResultDTO(){ isSuccess = true };
+        }
+        catch (Exception ex)
+        {
+            // NEXT-TODO: log error to log file
+            return new ResultDTO(){ isSuccess = false, statusMessage = ex.Message};
+        }
+    }
 
     public async Task<ResultDTO> Delete(int? songId,
         FruitBarDbContext InputContext)

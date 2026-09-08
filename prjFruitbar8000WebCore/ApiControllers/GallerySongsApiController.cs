@@ -67,8 +67,28 @@ namespace prjFruitbar8000WebCore.ApiControllers
 
         // PUT api/<GalleryApiController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<IActionResult> Edit(int id, [FromBody] GallerySongsDTO newInfoSong)
         {
+            if(id != newInfoSong.id)
+            {
+                return NotFound(MsgDicionary.message404);
+            }
+            var songToBeUpdated = _context.TSongs.FirstOrDefault(x => x.FSongId == id);
+            if (songToBeUpdated is null)
+            {
+                return NotFound(MsgDicionary.message404);
+            }
+            ResultDTO result = await new GalleryDataAccess()
+                .PostEditApi(newInfoSong, songToBeUpdated, _context);
+            if(result.isSuccess)
+            {
+                return Ok(newInfoSong);
+            }
+            if(result.statusMessage == "Not Found")
+            {
+                return NotFound(MsgDicionary.message404);
+            }
+            return Problem(result.statusMessage);
         }
 
         // DELETE api/<GalleryApiController>/5
