@@ -46,7 +46,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
 
         // POST api/<GalleryApiController>
         [HttpPost]
-        public async Task<IActionResult> Post([FromBody] GallerySongsDTO newGSong)
+        public async Task<IActionResult> Create([FromBody] GallerySongsDTO newGSong)
         {
             if(newGSong is null
             || newGSong.songName is null)
@@ -68,7 +68,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
 
         // PUT api/<GalleryApiController>/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> Edit(int id, [FromBody] GallerySongsDTO newInfoSong)
+        public async Task<IActionResult> Update(int id, [FromBody] GallerySongsDTO newInfoSong)
         {
             if(id != newInfoSong.id)
             {
