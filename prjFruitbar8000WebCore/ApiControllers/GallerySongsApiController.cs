@@ -57,7 +57,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
 
             if(result.isSuccess)
             {
-                return Ok();
+                return Ok(result.statusMessage); // return new song info json
             }
             if(result.statusMessage == "NotFound")
             {
