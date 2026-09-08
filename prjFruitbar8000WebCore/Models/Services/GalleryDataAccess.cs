@@ -159,12 +159,15 @@ public class GalleryDataAccess
         return infoEditSong;
     }
 
-    public async Task<bool> PostEdit(GallerySongViewModel gsvm, TSong tobeUpdate, FruitBarDbContext InputContext)
+    public async Task<bool> PostEdit(GallerySongViewModel gsvm, 
+        TSong tobeUpdate, 
+        FruitBarDbContext InputContext)
     {
         if (gsvm.id is null ||
             // KNOWN ISSUE: 因應 index 選取邏輯一定要有對應關聯資料，暫不開放藉由 Controller 清空歌曲所有的創作者/專輯關聯
             gsvm.SelectedArtistIdList is null ||
-            gsvm.SelectedAlbumIdList is null || string.IsNullOrWhiteSpace(gsvm.SongName))
+            gsvm.SelectedAlbumIdList is null || 
+            string.IsNullOrWhiteSpace(gsvm.SongName))
         {
             return false;
         }
@@ -178,7 +181,7 @@ public class GalleryDataAccess
         {
             // 檢查是否已有重複關聯
             var existRelationInList = tobeUpdate.TArtistsSongs
-                .Where(x => x.FArtistId == artistid).FirstOrDefault();
+                .FirstOrDefault(x => x.FArtistId == artistid);
 
             // 如果沒有重複關聯, 新增關聯
             if (existRelationInList is null)
@@ -247,11 +250,11 @@ public class GalleryDataAccess
 
     }
 
-    public async Task Delete(int? songId, FruitBarDbContext InputContext)
+    public async Task<bool> Delete(int? songId, FruitBarDbContext InputContext)
     {
         if (songId is null)
         {
-            return;
+            return false;
         }
         var songToBeDeleted = await InputContext.TSongs
             .Include(x => x.TSongsAlbums)
@@ -259,13 +262,21 @@ public class GalleryDataAccess
             .FirstOrDefaultAsync(x => x.FSongId == songId);
         if (songToBeDeleted is null) // 開始查詢
         {
-            return;
+            return false;
         }
         InputContext.RemoveRange(songToBeDeleted.TArtistsSongs);
         InputContext.RemoveRange(songToBeDeleted.TSongsAlbums);
         InputContext.Remove(songToBeDeleted);
-        await InputContext.SaveChangesAsync();
-        return;
+        try
+        {
+            await InputContext.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // NEXT-TODO: expand returned info
+            return false;
+        }
+        return true;
     }
 
     private static IQueryable<GallerySongsDTO> GetGallerySongsRaw(FruitBarDbContext inputContext)

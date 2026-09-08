@@ -95,7 +95,7 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return RedirectToAction(nameof(List));
             }
-            await new GalleryDataAccess().Delete(id, _context);
+            bool isOk = await new GalleryDataAccess().Delete(id, _context);
             return RedirectToAction(nameof(List));
         }
     }
