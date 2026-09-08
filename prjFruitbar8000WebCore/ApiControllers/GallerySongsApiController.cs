@@ -75,14 +75,15 @@ namespace prjFruitbar8000WebCore.ApiControllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            if(await new GalleryDataAccess().Delete(id, _context))
+            var result = await new GalleryDataAccess().Delete(id, _context);
+            if(result.isSuccess)
             {
                 return Ok(MsgDicionary.messagedeleted);
             }
             else
             {
                 // NEXT-TODO: expand returned info
-                return Problem();
+                return Problem(result.statusMessage);
             }
             
         }

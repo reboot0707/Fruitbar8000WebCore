@@ -257,12 +257,12 @@ public class GalleryDataAccess
 
     }
 
-    public async Task<bool> Delete(int? songId,
+    public async Task<ResultDTO> Delete(int? songId,
         FruitBarDbContext InputContext)
     {
         if (songId is null)
         {
-            return false;
+            return new ResultDTO() { isSuccess = false, statusMessage = "Not Found"};
         }
         var songToBeDeleted = await InputContext.TSongs
             .Include(x => x.TSongsAlbums)
@@ -270,7 +270,7 @@ public class GalleryDataAccess
             .FirstOrDefaultAsync(x => x.FSongId == songId);
         if (songToBeDeleted is null) // 開始查詢
         {
-            return false;
+            return new ResultDTO() { isSuccess = false, statusMessage = "Not Found"};
         }
         InputContext.RemoveRange(songToBeDeleted.TArtistsSongs);
         InputContext.RemoveRange(songToBeDeleted.TSongsAlbums);
@@ -282,9 +282,9 @@ public class GalleryDataAccess
         catch (Exception ex)
         {
             // NEXT-TODO: expand returned info
-            return false;
+            return new ResultDTO() { isSuccess = false, statusMessage = ex.Message};
         }
-        return true;
+        return new ResultDTO() { isSuccess = true };
     }
 
     private static IQueryable<GallerySongsDTO> GetGallerySongsRaw(FruitBarDbContext inputContext)
