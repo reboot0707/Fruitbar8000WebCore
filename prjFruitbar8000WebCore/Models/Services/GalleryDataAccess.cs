@@ -47,7 +47,8 @@ public class GalleryDataAccess
         return await querylistDTOs.ToListAsync();
     }
 
-    public async Task<GallerySongsDTO?> ListApiById(int id, FruitBarDbContext inputContext)
+    public async Task<GallerySongsDTO?> ListApiById(int id,
+        FruitBarDbContext inputContext)
     {
         var qResult = inputContext.TSongs
             .Where(x => x.FSongId == id)
@@ -87,7 +88,8 @@ public class GalleryDataAccess
         return nsvm;
     }
 
-    public async Task PostCreate(GallerySongViewModel nsvmSent, FruitBarDbContext inputContext)
+    public async Task PostCreate(GallerySongViewModel nsvmSent,
+        FruitBarDbContext inputContext)
     {
         if ((nsvmSent is null)
         || string.IsNullOrWhiteSpace(nsvmSent.SongName))
@@ -108,19 +110,21 @@ public class GalleryDataAccess
         ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
     }
 
-    public async Task<ResultDTO> PostCreateApi(GallerySongsDTO nsDTO, FruitBarDbContext inputContext)
+    public async Task<ResultDTO> PostCreateApi(GallerySongsDTO nsDTO,
+        FruitBarDbContext inputContext)
     {
         if ((nsDTO is null)
         || string.IsNullOrWhiteSpace(nsDTO.songName))
         {
-            return new ResultDTO(){ isSuccess = false, statusMessage = "NotFound" };
+            return new ResultDTO() { isSuccess = false, statusMessage = "NotFound" };
         }
         ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
         return result;
     }
 
     // binding with MVC View Component
-    public async Task<GallerySongViewModel> GetEdit(TSong editSong, FruitBarDbContext inputContext)
+    public async Task<GallerySongViewModel> GetEdit(TSong editSong,
+        FruitBarDbContext inputContext)
     {
         var selListArtist = await inputContext.TArtists
             .OrderBy(x => x.FArtistName)
@@ -162,14 +166,14 @@ public class GalleryDataAccess
         return infoEditSong;
     }
 
-    public async Task<bool> PostEdit(GallerySongViewModel gsvm, 
-        TSong tobeUpdate, 
+    public async Task<bool> PostEdit(GallerySongViewModel gsvm,
+        TSong tobeUpdate,
         FruitBarDbContext InputContext)
     {
         if (gsvm.id is null ||
             // KNOWN ISSUE: 因應 index 選取邏輯一定要有對應關聯資料，暫不開放藉由 Controller 清空歌曲所有的創作者/專輯關聯
             gsvm.SelectedArtistIdList is null ||
-            gsvm.SelectedAlbumIdList is null || 
+            gsvm.SelectedAlbumIdList is null ||
             string.IsNullOrWhiteSpace(gsvm.SongName))
         {
             return false;
@@ -253,7 +257,8 @@ public class GalleryDataAccess
 
     }
 
-    public async Task<bool> Delete(int? songId, FruitBarDbContext InputContext)
+    public async Task<bool> Delete(int? songId,
+        FruitBarDbContext InputContext)
     {
         if (songId is null)
         {
@@ -299,10 +304,11 @@ public class GalleryDataAccess
                 });
     }
 
-    private static async Task<ResultDTO> CreateGallerySongCommon(GallerySongsDTO nsDTO, FruitBarDbContext inputContext)
+    private static async Task<ResultDTO> CreateGallerySongCommon(GallerySongsDTO nsDTO,
+        FruitBarDbContext inputContext)
     {
         ResultDTO resultDTO = new ResultDTO();
-        
+
         var createdSong = new TSong()
         {
             FSongName = nsDTO.songName!, // assume nsDTO.songName has value when calling this
