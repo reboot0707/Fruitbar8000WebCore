@@ -8,7 +8,7 @@ using prjFruitbar8000WebCore.Models.Services;
 
 namespace prjFruitbar8000WebCore.ApiControllers
 {
-    [Route("apis/v1/artists")]
+    [Route("apis/v2/artists")]
     [ApiController]
     public class ArtistsApiController : ControllerBase
     {
@@ -48,7 +48,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
             return Ok(artists);
         }
 
-        // GET api/v1/artists/5
+        // GET apis/v2/artists/5
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(int id)
         {
