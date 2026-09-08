@@ -70,7 +70,8 @@ namespace prjFruitbar8000WebCore.ApiControllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] GallerySongsDTO newInfoSong)
         {
-            if(id != newInfoSong.id)
+            // default value of int is zero, 暗示 payload 部分 id 可以不填, 但不能填錯.
+            if(id != newInfoSong.id && newInfoSong.id != 0)
             {
                 return NotFound(MsgDicionary.message404);
             }
