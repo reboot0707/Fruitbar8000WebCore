@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.OpenApi;
 using prjFruitbar8000WebCore.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,8 +6,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<FruitBarDbContext>();
+builder.Services.AddOpenApi("v2");
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+
+    app.UseSwaggerUI(options =>
+    {
+        options.RoutePrefix = "apis/v2/docs";
+        options.SwaggerEndpoint("/openapi/v2.json", "v2");
+    });
+
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

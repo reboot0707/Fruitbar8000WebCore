@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Entities;
 using prjFruitbar8000WebCore.Models.ViewModels;
 
@@ -7,46 +9,58 @@ namespace prjFruitbar8000WebCore.Models.Services;
 
 public class GalleryDataAccess
 {
-    public GalleryDataAccess() {} //constructor
+    public GalleryDataAccess() { } //constructor
 
     // input: (1) empty "quertlistview" data, (2) DBcontext
-    public List<GalleryListViewModel> List(List<GalleryListViewModel> querylistview, FruitBarDbContext inputContext)
-    {     
-        var songlistq = inputContext.TSongs
-                .OrderBy(x => x.FSongName)
-                .Select(x => new
-                {
-                    x.FSongId,
-                    x.FSongName,
-                    ArtistNames = x.TArtistsSongs
-                        .OrderBy(y => y.FArtist.FArtistName)
-                        .Select(y => y.FArtist.FArtistName),
-                    AlbumNames = x.TSongsAlbums
-                        .OrderBy(y => y.FAlbum.FAlbumName)
-                        .Select(y => y.FAlbum.FAlbumName)
-                });
+    public async Task<List<GalleryListViewModel>> List(FruitBarDbContext inputContext)
+    {
+        IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        // NEXT-TODO: use "SelectMany" to replace multi-layer loop
-        foreach (var song in songlistq)
-        {
-            foreach (var songalbum in song.AlbumNames)
+        IQueryable<GalleryListViewModel> querylistview = songlistq.SelectMany(song => song.albumIds,
+            (song, albumId) => new GalleryListViewModel
             {
-                List<string> ArtistNameList = new List<string>();
-                foreach (var songartist in song.ArtistNames)
-                {
-                    ArtistNameList.Add(songartist);
-                }
-                GalleryListViewModel qvm = new GalleryListViewModel()
-                {
-                    id = song.FSongId,
-                    SongName = song.FSongName,
-                    ArtistNames = String.Join('、', ArtistNameList),
-                    AlbumName = songalbum
-                };
-                querylistview.Add(qvm);
-            }
-        }
-        return querylistview;
+                id = song.id,
+                SongName = song.songName,
+                ArtistNames = string.Join('、', inputContext.TArtists
+                    .Where(x => song.artistIds.Contains(x.FArtistId))
+                    .Select(x => x.FArtistName)),
+                AlbumName = inputContext.TAlbums
+                    .Where(x => x.FAlbumId == albumId)
+                    .Select(x => x.FAlbumName)
+                    .FirstOrDefault()
+            });
+        return await querylistview.ToListAsync();
+    }
+
+    public async Task<List<GallerySongsDTO>> ListApi(FruitBarDbContext inputContext)
+    {
+        IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
+
+        IQueryable<GallerySongsDTO> querylistDTOs = songlistq.SelectMany(song => song.albumIds,
+            (song, albumName) => new GallerySongsDTO
+            {
+                id = song.id,
+                songName = song.songName,
+                artistIds = song.artistIds,
+                albumIds = song.albumIds
+            });
+
+        return await querylistDTOs.ToListAsync();
+    }
+
+    public async Task<GallerySongsDTO?> ListApiById(int id,
+        FruitBarDbContext inputContext)
+    {
+        var qResult = inputContext.TSongs
+            .Where(x => x.FSongId == id)
+            .Select(x => new GallerySongsDTO
+            {
+                id = x.FSongId,
+                songName = x.FSongName,
+                artistIds = x.TArtistsSongs.Select(y => y.FArtistId),
+                albumIds = x.TSongsAlbums.Select(y => y.FAlbumId)
+            });
+        return await qResult.FirstOrDefaultAsync();
     }
 
     // binding with MVC View Component
@@ -75,55 +89,43 @@ public class GalleryDataAccess
         return nsvm;
     }
 
-    public async Task PostCreate(GallerySongViewModel nsvmSent, FruitBarDbContext inputContext)
+    public async Task PostCreate(GallerySongViewModel nsvmSent,
+        FruitBarDbContext inputContext)
+    {
+        if ((nsvmSent is null)
+        || string.IsNullOrWhiteSpace(nsvmSent.SongName))
         {
-            if ((nsvmSent is null)
-            || string.IsNullOrWhiteSpace(nsvmSent.SongName))
-            {
-                return;
-            }
-            var createdSong = new TSong()
-            {
-                FSongName = nsvmSent.SongName,
-            };
-            if (nsvmSent.SelectedAlbumIdList is null || 
-                nsvmSent.SelectedArtistIdList is null)
-            {
-                return;
-            }
-            foreach (int artistid in nsvmSent.SelectedArtistIdList)
-            {
-                createdSong.TArtistsSongs.Add(new TArtistsSong()
-                {
-                    FArtistId = artistid,
-                });
-            }
+            return;
+        }
+        if (nsvmSent.SelectedAlbumIdList is null ||
+            nsvmSent.SelectedArtistIdList is null)
+        {
+            return;
+        }
+        GallerySongsDTO nsDTO = new GallerySongsDTO
+        {
+            songName = nsvmSent.SongName,
+            artistIds = nsvmSent.SelectedArtistIdList,
+            albumIds = nsvmSent.SelectedAlbumIdList
+        };
+        ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
+    }
 
-            // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
-            foreach (int albumid in nsvmSent.SelectedAlbumIdList)
-            {
-                int relatedAlbumid = albumid;
-                var selectedAlbum = await inputContext.TAlbums
-                    .Where(x => x.FAlbumId == relatedAlbumid)
-                    .Include(x => x.TSongsAlbums)  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
-                    .FirstOrDefaultAsync();
-                if (selectedAlbum is null)
-                {
-                    continue;
-                }
-                int assumedTrackNumber = AssumedTrackNumberInAlbum(selectedAlbum);
-                createdSong.TSongsAlbums.Add(new TSongsAlbum()
-                {
-                    FAlbumId = relatedAlbumid,
-                    FTrackNumber = assumedTrackNumber
-                });
-            }
-    inputContext.TSongs.Add(createdSong);
-        inputContext.SaveChanges();
+    public async Task<ResultDTO> PostCreateApi(GallerySongsDTO nsDTO,
+        FruitBarDbContext inputContext)
+    {
+        if ((nsDTO is null)
+        || string.IsNullOrWhiteSpace(nsDTO.songName))
+        {
+            return new ResultDTO() { isSuccess = false, statusMessage = "NotFound" };
+        }
+        ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
+        return result;
     }
 
     // binding with MVC View Component
-    public async Task<GallerySongViewModel> GetEdit(TSong editSong, FruitBarDbContext inputContext)
+    public async Task<GallerySongViewModel> GetEdit(TSong editSong,
+        FruitBarDbContext inputContext)
     {
         var selListArtist = await inputContext.TArtists
             .OrderBy(x => x.FArtistName)
@@ -165,99 +167,81 @@ public class GalleryDataAccess
         return infoEditSong;
     }
 
-    public async Task<bool> PostEdit(GallerySongViewModel gsvm, TSong tobeUpdate, FruitBarDbContext InputContext)
+    public async Task<ResultDTO> PostEdit(GallerySongViewModel gsvm,
+        TSong tobeUpdate,
+        FruitBarDbContext InputContext)
+    {
+        if (gsvm.id is null ||
+            // KNOWN ISSUE: 因應 index 選取邏輯一定要有對應關聯資料，暫不開放藉由 Controller 清空歌曲所有的創作者/專輯關聯
+            gsvm.SelectedArtistIdList is null ||
+            gsvm.SelectedAlbumIdList is null ||
+            string.IsNullOrWhiteSpace(gsvm.SongName))
         {
-            if(gsvm.id is null ||
-                // KNOWN ISSUE: 因應 index 選取邏輯一定要有對應關聯資料，暫不開放藉由 Controller 清空歌曲所有的創作者/專輯關聯
-                gsvm.SelectedArtistIdList is null ||
-                gsvm.SelectedAlbumIdList is null || string.IsNullOrWhiteSpace(gsvm.SongName))
-            {
-                return false;
-            }
-            
-            tobeUpdate.FSongName = gsvm.SongName;
-
-            List<TArtistsSong> artistTobeAdd = new List<TArtistsSong>();
-            List<TArtistsSong> artistTobeRemoved = new List<TArtistsSong>();
-
-            foreach (var artistid in gsvm.SelectedArtistIdList)
-            {
-                // 檢查是否已有重複關聯
-                var existRelationInList = tobeUpdate.TArtistsSongs
-                    .Where(x => x.FArtistId == artistid).FirstOrDefault();
-
-                // 如果沒有重複關聯, 新增關聯
-                if (existRelationInList is null)
-                {
-                    // 先存在 List 裡面，全部確認後直接對 DbSet 操作
-                    artistTobeAdd.Add(new TArtistsSong()
-                    {
-                        FArtistId = artistid,
-                        FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
-                    });
-                }
-            }
-            // FIXED: 不可在 foreach 枚舉 TArtistsSongs 時修改同一集合，否則會拋出 Collection was modified；
-            // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
-            artistTobeRemoved = tobeUpdate.TArtistsSongs.Where(x => !gsvm.SelectedArtistIdList.Contains(x.FArtistId)).ToList();
-
-            InputContext.TArtistsSongs.AddRange(artistTobeAdd);
-            InputContext.TArtistsSongs.RemoveRange(artistTobeRemoved);
-
-            List<TSongsAlbum> albumsTobeAdd = new List<TSongsAlbum>();
-            List<TSongsAlbum> albumsTobeRemoved = new List<TSongsAlbum>();
-
-            var selectedAlbumList = await InputContext.TAlbums
-                .Where(x => gsvm.SelectedAlbumIdList.Contains(x.FAlbumId))
-                .Include(x => x.TSongsAlbums)
-                .ToListAsync();  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
-
-            foreach (var selectedAlbum in selectedAlbumList)
-            {
-                // 檢查是否已有重複關聯
-                var existRelationInList = tobeUpdate.TSongsAlbums
-                    .Where(x => x.FAlbumId == selectedAlbum.FAlbumId).FirstOrDefault();
-
-                if (existRelationInList is not null)
-                {
-                    continue;
-                }
-                
-                // 如果沒有重複關聯, 新增關聯
-                int assumedTrackNumber = AssumedTrackNumberInAlbum(selectedAlbum);
-
-                albumsTobeAdd.Add(new TSongsAlbum()
-                {
-                    FAlbumId = selectedAlbum.FAlbumId,
-                    FTrackNumber = assumedTrackNumber,
-                    FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
-                });
-            }
-            // FIXED: 不可在 foreach 枚舉 TSongsAlbums 時修改同一集合，否則會拋出 Collection was modified；
-            // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
-            albumsTobeRemoved = tobeUpdate.TSongsAlbums.Where(x => !gsvm.SelectedAlbumIdList.Contains(x.FAlbumId)).ToList();
-
-            InputContext.TSongsAlbums.AddRange(albumsTobeAdd);
-            InputContext.TSongsAlbums.RemoveRange(albumsTobeRemoved);
-
-            try
-            {
-                await InputContext.SaveChangesAsync();
-                return true;
-            }
-            catch(Exception)
-            {
-                // NEXT-TODO: log error to log file
-                return false;
-            }
-            
+            return new ResultDTO()
+            { 
+                isSuccess = false,
+                statusMessage = "Not Found"
+            };
         }
 
-    public async Task Delete(int? songId, FruitBarDbContext InputContext)
+        tobeUpdate.FSongName = gsvm.SongName;
+
+        UpdateArtistsSong(gsvm.SelectedArtistIdList, tobeUpdate, InputContext);
+        await UpdateSongAlbums(gsvm.SelectedAlbumIdList, tobeUpdate, InputContext);
+
+        try
+        {
+            await InputContext.SaveChangesAsync();
+            return new ResultDTO()
+            { 
+                isSuccess = true,
+            };
+        }
+        catch (Exception ex)
+        {
+            // NEXT-TODO: log error to log file
+            return new ResultDTO()
+            { 
+                isSuccess = false,
+                statusMessage = ex.Message
+            };
+        }
+    }
+
+    public async Task<ResultDTO> PostEditApi(GallerySongsDTO gsDTO,
+        TSong tobeUpdate,
+        FruitBarDbContext InputContext)
     {
-        if(songId is null)
-        { 
-            return;
+        if (gsDTO.artistIds is null ||
+            gsDTO.albumIds is null ||
+            string.IsNullOrWhiteSpace(gsDTO.songName))
+        {
+            return new ResultDTO(){ isSuccess = false, statusMessage = "Not Found"};
+        }
+
+        tobeUpdate.FSongName = gsDTO.songName;
+
+        UpdateArtistsSong(gsDTO.artistIds, tobeUpdate, InputContext);
+        await UpdateSongAlbums(gsDTO.albumIds, tobeUpdate, InputContext);
+
+        try
+        {
+            await InputContext.SaveChangesAsync();
+            return new ResultDTO(){ isSuccess = true };
+        }
+        catch (Exception ex)
+        {
+            // NEXT-TODO: log error to log file
+            return new ResultDTO(){ isSuccess = false, statusMessage = ex.Message};
+        }
+    }
+
+    public async Task<ResultDTO> Delete(int? songId,
+        FruitBarDbContext InputContext)
+    {
+        if (songId is null)
+        {
+            return new ResultDTO() { isSuccess = false, statusMessage = "Not Found"};
         }
         var songToBeDeleted = await InputContext.TSongs
             .Include(x => x.TSongsAlbums)
@@ -265,16 +249,165 @@ public class GalleryDataAccess
             .FirstOrDefaultAsync(x => x.FSongId == songId);
         if (songToBeDeleted is null) // 開始查詢
         {
-            return;
+            return new ResultDTO() { isSuccess = false, statusMessage = "Not Found"};
         }
         InputContext.RemoveRange(songToBeDeleted.TArtistsSongs);
         InputContext.RemoveRange(songToBeDeleted.TSongsAlbums);
         InputContext.Remove(songToBeDeleted);
-        await InputContext.SaveChangesAsync();
-        return;
+        try
+        {
+            await InputContext.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // NEXT-TODO: expand returned info
+            return new ResultDTO() { isSuccess = false, statusMessage = ex.Message};
+        }
+        return new ResultDTO() { isSuccess = true };
     }
 
-    // section for private methods
+    ///////////////// section for private methods ///////////////////////
+
+    private static IQueryable<GallerySongsDTO> GetGallerySongsRaw(FruitBarDbContext inputContext)
+    {
+        return inputContext.TSongs
+                .OrderBy(x => x.FSongId)
+                .Select(x => new GallerySongsDTO
+                {
+                    id = x.FSongId,
+                    songName = x.FSongName,
+                    artistIds = x.TArtistsSongs
+                        .OrderBy(y => y.FArtist.FArtistId)
+                        .Select(y => y.FArtist.FArtistId),
+                    albumIds = x.TSongsAlbums
+                        .OrderBy(y => y.FAlbum.FAlbumId)
+                        .Select(y => y.FAlbum.FAlbumId)
+                });
+    }
+
+    private static async Task<ResultDTO> CreateGallerySongCommon(GallerySongsDTO nsDTO,
+        FruitBarDbContext inputContext)
+    {
+        ResultDTO resultDTO = new ResultDTO();
+
+        var createdSong = new TSong()
+        {
+            FSongName = nsDTO.songName!, // assume nsDTO.songName has value when calling this
+        };
+        foreach (int artistid in nsDTO.artistIds)
+        {
+            createdSong.TArtistsSongs.Add(new TArtistsSong()
+            {
+                FArtistId = artistid,
+            });
+        }
+        // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
+        foreach (int albumid in nsDTO.albumIds)
+        {
+            int relatedAlbumid = albumid;
+            var selectedAlbum = await inputContext.TAlbums
+                .Where(x => x.FAlbumId == relatedAlbumid)
+                .Include(x => x.TSongsAlbums)  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
+                .FirstOrDefaultAsync();
+            if (selectedAlbum is null)
+            {
+                continue;
+            }
+            int assumedTrackNumber = AssumedTrackNumberInAlbum(selectedAlbum);
+            createdSong.TSongsAlbums.Add(new TSongsAlbum()
+            {
+                FAlbumId = relatedAlbumid,
+                FTrackNumber = assumedTrackNumber
+            });
+        }
+        inputContext.TSongs.Add(createdSong);
+        try
+        {
+            inputContext.SaveChanges();
+            nsDTO.id = createdSong.FSongId;
+            resultDTO.isSuccess = true;
+            resultDTO.statusMessage = JsonSerializer.Serialize(nsDTO);
+        }
+        catch (Exception ex)
+        {
+            resultDTO.isSuccess = false;
+            resultDTO.statusMessage = ex.Message;
+        }
+        return resultDTO;
+    }
+
+
+    private static async Task UpdateSongAlbums(IEnumerable<int> selectedId, TSong tobeUpdate, FruitBarDbContext InputContext)
+    {
+        List<TSongsAlbum> albumsTobeAdd = new List<TSongsAlbum>();
+        List<TSongsAlbum> albumsTobeRemoved = new List<TSongsAlbum>();
+
+        var selectedAlbumList = await InputContext.TAlbums
+            .Where(x => selectedId.Contains(x.FAlbumId))
+            .Include(x => x.TSongsAlbums)
+            .ToListAsync();  // 針對指定導覽屬性做 Eager Loading, 等等才查得到既有專輯內曲目編號
+
+        foreach (var selectedAlbum in selectedAlbumList)
+        {
+            // 檢查是否已有重複關聯
+            bool alreadyLinked = tobeUpdate.TSongsAlbums
+                .Any(x => x.FAlbumId == selectedAlbum.FAlbumId);
+            if (alreadyLinked)
+            {
+                continue;
+            }
+
+            // 如果沒有重複關聯, 新增關聯
+            int assumedTrackNumber = AssumedTrackNumberInAlbum(selectedAlbum);
+
+            albumsTobeAdd.Add(new TSongsAlbum()
+            {
+                FAlbumId = selectedAlbum.FAlbumId,
+                FTrackNumber = assumedTrackNumber,
+                FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
+            });
+        }
+        // FIXED: 不可在 foreach 枚舉 TSongsAlbums 時修改同一集合，否則會拋出 Collection was modified；
+        // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
+        albumsTobeRemoved = tobeUpdate.TSongsAlbums.Where(x => !selectedId.Contains(x.FAlbumId)).ToList();
+
+        InputContext.TSongsAlbums.AddRange(albumsTobeAdd);
+        InputContext.TSongsAlbums.RemoveRange(albumsTobeRemoved);
+    }
+
+    private static void UpdateArtistsSong(IEnumerable<int> selectedId, TSong tobeUpdate, FruitBarDbContext InputContext)
+    {
+        List<TArtistsSong> artistTobeAdd = new List<TArtistsSong>();
+        List<TArtistsSong> artistTobeRemoved = new List<TArtistsSong>();
+
+        foreach (var artistId in selectedId)
+        {
+            // 檢查是否已有重複關聯
+            bool alreadyLinked = tobeUpdate.TArtistsSongs
+                .Any(x => x.FArtistId == artistId);
+
+            // 如果沒有重複關聯, 新增關聯
+            if (alreadyLinked)
+            {
+                continue;
+            }
+            // 先存在 List 裡面，全部確認後直接對 DbSet 操作
+            artistTobeAdd.Add(new TArtistsSong()
+            {
+                FArtistId = artistId,
+                FSong = tobeUpdate // 導覽屬性, 導覽回更新歌曲物件本體
+            });
+        }
+        // FIXED: 不可在 foreach 枚舉 TArtistsSongs 時修改同一集合，否則會拋出 Collection was modified；
+        // 且關聯 FK 不可為 null，應由待刪除差集明確將中介實體標記為 Deleted，而非只切斷導覽關聯。
+        artistTobeRemoved = tobeUpdate.TArtistsSongs
+            .Where(x => !selectedId.Contains(x.FArtistId))
+            .ToList();
+
+        InputContext.TArtistsSongs.AddRange(artistTobeAdd);
+        InputContext.TArtistsSongs.RemoveRange(artistTobeRemoved);
+    }
+
     private static int AssumedTrackNumberInAlbum(TAlbum selectedAlbum)
     {
         // FIXED: TSongsAlbums 沒有保證排序；目前逐項 while 的結果受列舉順序影響，

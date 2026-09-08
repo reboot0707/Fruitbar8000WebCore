@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models;
+using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Services;
 using prjFruitbar8000WebCore.Models.ViewModels;
 
@@ -22,11 +23,11 @@ namespace prjFruitbar8000WebCore.Controllers
         // GET: QueryController
         public async Task<IActionResult> List()
         {
-            // 修改前作邏輯, 參考某音樂平台, 先用歌曲為單位列表
-            List<GalleryListViewModel> queryList = new List<GalleryListViewModel>();
-
-            queryList = new GalleryDataAccess().List(queryList, _context);
-
+            var queryList = await new GalleryDataAccess().List(_context);
+            if(queryList is null)
+            {
+                return View(new List<GalleryListViewModel>());
+            }
             return View(queryList);
         }
 
@@ -80,8 +81,8 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return View(gsvm);
             }
-            bool isSuccess = await new GalleryDataAccess().PostEdit(gsvm, tobeUpdate, _context);
-            if (isSuccess)
+            ResultDTO result = await new GalleryDataAccess().PostEdit(gsvm, tobeUpdate, _context);
+            if (result.isSuccess)
             {
                 return RedirectToAction(nameof(List));
             }
@@ -95,7 +96,7 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return RedirectToAction(nameof(List));
             }
-            await new GalleryDataAccess().Delete(id, _context);
+            ResultDTO result = await new GalleryDataAccess().Delete(id, _context);
             return RedirectToAction(nameof(List));
         }
     }

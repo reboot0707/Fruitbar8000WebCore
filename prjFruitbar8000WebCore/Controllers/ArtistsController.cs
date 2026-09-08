@@ -19,6 +19,7 @@ public class ArtistsController : Controller
     public async Task<IActionResult> Index()
     {
         List<CArtistsWrap> artists = await _context.TArtists
+            .OrderBy(x => x.FArtistName)
             .Select(artist => new CArtistsWrap(artist))
             .ToListAsync();
 
@@ -53,6 +54,7 @@ public class ArtistsController : Controller
         }
 
         TArtist? artist = await _context.TArtists
+            .OrderBy(x => x.FArtistId)
             .AsNoTracking()
             .FirstOrDefaultAsync(item => item.FArtistId == id);
 
@@ -74,6 +76,7 @@ public class ArtistsController : Controller
         }
 
         TArtist? artist = await _context.TArtists
+            .OrderBy(x => x.FArtistId)
             .FirstOrDefaultAsync(item => item.FArtistId == artistWrap.FArtistId);
 
         if (artist is null)
