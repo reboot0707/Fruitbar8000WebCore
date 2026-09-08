@@ -324,8 +324,9 @@ public class GalleryDataAccess
         try
         {
             inputContext.SaveChanges();
+            nsDTO.id = createdSong.FSongId;
             resultDTO.isSuccess = true;
-            resultDTO.statusMessage = JsonSerializer.Serialize(createdSong);
+            resultDTO.statusMessage = JsonSerializer.Serialize(nsDTO);
         }
         catch (Exception ex)
         {
