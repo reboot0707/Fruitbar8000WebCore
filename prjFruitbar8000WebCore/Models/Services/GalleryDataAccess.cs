@@ -108,14 +108,15 @@ public class GalleryDataAccess
         ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
     }
 
-    public async Task PostCreateApi(GallerySongsDTO nsDTO, FruitBarDbContext inputContext)
+    public async Task<ResultDTO> PostCreateApi(GallerySongsDTO nsDTO, FruitBarDbContext inputContext)
     {
         if ((nsDTO is null)
         || string.IsNullOrWhiteSpace(nsDTO.songName))
         {
-            return;
+            return new ResultDTO(){ isSuccess = false, statusMessage = "NotFound" };
         }
         ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
+        return result;
     }
 
     // binding with MVC View Component

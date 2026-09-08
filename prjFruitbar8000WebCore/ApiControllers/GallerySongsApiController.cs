@@ -45,8 +45,24 @@ namespace prjFruitbar8000WebCore.ApiControllers
 
         // POST api/<GalleryApiController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<IActionResult> Post([FromBody] GallerySongsDTO newGSong)
         {
+            if(newGSong is null
+            || newGSong.songName is null)
+            {
+                return NotFound(MsgDicionary.message404);
+            }
+            ResultDTO result = await new GalleryDataAccess().PostCreateApi(newGSong, _context);
+
+            if(result.isSuccess)
+            {
+                return Ok();
+            }
+            if(result.statusMessage == "NotFound")
+            {
+                return NotFound(MsgDicionary.message404);
+            }
+            return Problem(result.statusMessage);
         }
 
         // PUT api/<GalleryApiController>/5
