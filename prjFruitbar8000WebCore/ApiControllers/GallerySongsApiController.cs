@@ -31,9 +31,16 @@ namespace prjFruitbar8000WebCore.ApiControllers
 
         // GET api/<GalleryApiController>/5
         [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
+        public async Task<IActionResult> Get(int id)
+        {        
+            GallerySongsDTO? qResult = await new GalleryDataAccess().ListApiById(id, _context);
+            
+            if(qResult is null)
+            {
+                return NotFound(MsgDicionary.message404);
+            }
+
+            return Ok(qResult);
         }
 
         // POST api/<GalleryApiController>

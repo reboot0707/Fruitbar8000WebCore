@@ -47,6 +47,20 @@ public class GalleryDataAccess
         return await querylistDTOs.ToListAsync();
     }
 
+    public async Task<GallerySongsDTO?> ListApiById(int id, FruitBarDbContext inputContext)
+    {
+        var qResult = inputContext.TSongs
+            .Where(x => x.FSongId == id)
+            .Select(x => new GallerySongsDTO
+            {
+                id = x.FSongId,
+                songName = x.FSongName,
+                artistIds = x.TArtistsSongs.Select(y => y.FArtistId),
+                albumIds = x.TSongsAlbums.Select(y => y.FAlbumId)
+            });
+        return await qResult.FirstOrDefaultAsync();
+    }
+
     // binding with MVC View Component
     public async Task<GallerySongViewModel> GetCreate(FruitBarDbContext inputContext)
     {
