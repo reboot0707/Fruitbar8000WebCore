@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models;
+using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Services;
 using prjFruitbar8000WebCore.Models.ViewModels;
 
@@ -80,8 +81,8 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return View(gsvm);
             }
-            bool isSuccess = await new GalleryDataAccess().PostEdit(gsvm, tobeUpdate, _context);
-            if (isSuccess)
+            ResultDTO result = await new GalleryDataAccess().PostEdit(gsvm, tobeUpdate, _context);
+            if (result.isSuccess)
             {
                 return RedirectToAction(nameof(List));
             }
@@ -95,7 +96,7 @@ namespace prjFruitbar8000WebCore.Controllers
             {
                 return RedirectToAction(nameof(List));
             }
-            bool isOk = await new GalleryDataAccess().Delete(id, _context);
+            ResultDTO result = await new GalleryDataAccess().Delete(id, _context);
             return RedirectToAction(nameof(List));
         }
     }

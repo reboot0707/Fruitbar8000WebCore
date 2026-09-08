@@ -166,7 +166,7 @@ public class GalleryDataAccess
         return infoEditSong;
     }
 
-    public async Task<bool> PostEdit(GallerySongViewModel gsvm,
+    public async Task<ResultDTO> PostEdit(GallerySongViewModel gsvm,
         TSong tobeUpdate,
         FruitBarDbContext InputContext)
     {
@@ -176,7 +176,11 @@ public class GalleryDataAccess
             gsvm.SelectedAlbumIdList is null ||
             string.IsNullOrWhiteSpace(gsvm.SongName))
         {
-            return false;
+            return new ResultDTO()
+            { 
+                isSuccess = false,
+                statusMessage = "Not Found"
+            };
         }
 
         tobeUpdate.FSongName = gsvm.SongName;
@@ -187,12 +191,19 @@ public class GalleryDataAccess
         try
         {
             await InputContext.SaveChangesAsync();
-            return true;
+            return new ResultDTO()
+            { 
+                isSuccess = true,
+            };
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // NEXT-TODO: log error to log file
-            return false;
+            return new ResultDTO()
+            { 
+                isSuccess = false,
+                statusMessage = ex.Message
+            };
         }
     }
 
