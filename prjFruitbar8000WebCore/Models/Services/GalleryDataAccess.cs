@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Entities;
@@ -324,6 +325,7 @@ public class GalleryDataAccess
         {
             inputContext.SaveChanges();
             resultDTO.isSuccess = true;
+            resultDTO.statusMessage = JsonSerializer.Serialize(createdSong);
         }
         catch (Exception ex)
         {
