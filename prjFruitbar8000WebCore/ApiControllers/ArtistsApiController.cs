@@ -23,8 +23,9 @@ namespace prjFruitbar8000WebCore.ApiControllers
         /// 取得所有創作者。
         /// </summary>
         /// <remarks>
-        /// <para>GET /apis/v2/artists；無查詢參數、篩選或分頁，依 id 遞增排序。</para>
-        /// <para>每筆資料包含 id、artistName、artistType；查無資料時回傳空陣列。</para>
+        /// GET /apis/v2/artists；無查詢參數、篩選或分頁，依 id 遞增排序。
+        ///
+        /// 每筆資料包含 id、artistName、artistType；查無資料時回傳空陣列。
         /// </remarks>
         /// <returns>ArtistsDTO 陣列。</returns>
         /// <response code="200">查詢成功，回傳 ArtistsDTO[]。查無資料時為空陣列。</response>
@@ -65,7 +66,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         /// 依編號取得單一創作者。
         /// </summary>
         /// <remarks>
-        /// <para>GET /apis/v2/artists/{id}；回傳欄位為 id、artistName、artistType。</para>
+        /// GET /apis/v2/artists/{id}；回傳欄位為 id、artistName、artistType。
         /// </remarks>
         /// <param name="id">路徑中的創作者整數編號。</param>
         /// <returns>找到的 ArtistsDTO，或找不到資料的訊息字串。</returns>
@@ -98,10 +99,13 @@ namespace prjFruitbar8000WebCore.ApiControllers
         /// 新增創作者。
         /// </summary>
         /// <remarks>
-        /// <para>POST /apis/v2/artists；Content-Type: application/json。</para>
-        /// <para>JSON 本文：artistName 為必填名稱，artistType 可為 null。資料庫長度上限分別為 200 與 50 字元，DTO 未設定長度驗證。</para>
-        /// <para>本文 id 不用指定，新增後使用資料庫產生的編號。</para>
-        /// <para>成功使用 HTTP 200，回傳內容為 { "newAlbumId": "編號" } 的字串；編號值為字串。 現有欄位名稱仍為 newAlbumId，實際值是創作者編號。</para>
+        /// POST /apis/v2/artists；Content-Type: application/json。
+        ///
+        /// JSON 本文：artistName 為必填名稱，artistType 可為 null。資料庫長度上限分別為 200 與 50 字元，DTO 未設定長度驗證。
+        ///
+        /// 本文 id 不用指定，新增後使用資料庫產生的編號。
+        ///
+        /// 成功使用 HTTP 200，回傳內容為 { "newAlbumId": "編號" } 的字串；編號值為字串。 現有欄位名稱仍為 newAlbumId，實際值是創作者編號。
         /// </remarks>
         /// <param name="artistsDTO">要新增的 ArtistsDTO。</param>
         /// <returns>包含新增編號的字串。</returns>
@@ -142,9 +146,11 @@ namespace prjFruitbar8000WebCore.ApiControllers
         /// 更新指定創作者的全部可編輯欄位。
         /// </summary>
         /// <remarks>
-        /// <para>PUT /apis/v2/artists/{id}；Content-Type: application/json。</para>
-        /// <para>JSON 本文：artistName 為必填名稱，artistType 可為 null。資料庫長度上限分別為 200 與 50 字元，DTO 未設定長度驗證。</para>
-        /// <para>以路徑 id 為準，本文 id 不參與比對；成功回傳時會填入實際編號。artistName、artistType 皆會覆寫，未提供的選填欄位會設為 null。</para>
+        /// PUT /apis/v2/artists/{id}；Content-Type: application/json。
+        ///
+        /// JSON 本文：artistName 為必填名稱，artistType 可為 null。資料庫長度上限分別為 200 與 50 字元，DTO 未設定長度驗證。
+        ///
+        /// 以路徑 id 為準，本文 id 不參與比對；成功回傳時會填入實際編號。artistName、artistType 皆會覆寫，未提供的選填欄位會設為 null。
         /// </remarks>
         /// <param name="id">路徑中的創作者整數編號。</param>
         /// <param name="artistsDTO">更新內容，格式為 ArtistsDTO。</param>
@@ -190,9 +196,11 @@ namespace prjFruitbar8000WebCore.ApiControllers
         /// 刪除指定創作者，刪除前檢查歌曲關聯。
         /// </summary>
         /// <remarks>
-        /// <para>DELETE /apis/v2/artists/{id}；不需要請求本文。</para>
-        /// <para>直接刪除創作者資料；仍有歌曲關聯時呼叫 Forbid，不會移除歌曲或其關聯。</para>
-        /// <para>實作注意：目前 Forbid 的字串參數會被當成驗證方案名稱，並非回應本文；未註冊對應方案時可能拋出例外，不能保證回傳 403。</para>
+        /// DELETE /apis/v2/artists/{id}；不需要請求本文。
+        ///
+        /// 直接刪除創作者資料；仍有歌曲關聯時呼叫 Forbid，不會移除歌曲或其關聯。
+        ///
+        /// 實作注意：目前 Forbid 的字串參數會被當成驗證方案名稱，並非回應本文；未註冊對應方案時可能拋出例外，不能保證回傳 403。
         /// </remarks>
         /// <param name="id">路徑中的創作者整數編號。</param>
         /// <returns>成功時回傳內容為 { "message": "Deleted" } 的字串。</returns>
