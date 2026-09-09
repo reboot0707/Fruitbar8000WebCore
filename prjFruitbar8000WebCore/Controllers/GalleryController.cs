@@ -82,7 +82,7 @@ namespace prjFruitbar8000WebCore.Controllers
                 return View(gsvm);
             }
             ResultDTO result = await new GalleryDataAccess().PostEdit(gsvm, tobeUpdate, _context);
-            if (result.isSuccess)
+            if (result.IsSuccess)
             {
                 return RedirectToAction(nameof(List));
             }

@@ -5,6 +5,7 @@ using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Entities;
 using prjFruitbar8000WebCore.Models.Services;
+using prjFruitbar8000WebCore.Models.Wraps;
 
 namespace prjFruitbar8000WebCore.ApiControllers
 {
@@ -45,9 +46,9 @@ namespace prjFruitbar8000WebCore.ApiControllers
                     .Select(x => new AlbumsDTO()
                     {
                         id = x.FAlbumId,
-                        albumName = x.FAlbumName,
-                        albumType = x.FAlbumType,
-                        releaseDate = x.FReleaseDate
+                        AlbumName = x.FAlbumName,
+                        AlbumType = x.FAlbumType,
+                        ReleaseDate = x.FReleaseDate
                     })
                     .ToListAsync();
             }
@@ -86,13 +87,13 @@ namespace prjFruitbar8000WebCore.ApiControllers
             .Select(x => new AlbumsDTO()
             {
                 id = x.FAlbumId,
-                albumName = x.FAlbumName,
-                albumType = x.FAlbumType,
-                releaseDate = x.FReleaseDate
+                AlbumName = x.FAlbumName,
+                AlbumType = x.FAlbumType,
+                ReleaseDate = x.FReleaseDate
             }).FirstOrDefaultAsync();
             if (album is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             return Ok(album);
         }
@@ -126,9 +127,9 @@ namespace prjFruitbar8000WebCore.ApiControllers
             }
             var tobeAdd = new TAlbum()
             {
-                FAlbumName = albumsDTO.albumName,
-                FAlbumType = albumsDTO.albumType,
-                FReleaseDate = albumsDTO.releaseDate
+                FAlbumName = albumsDTO.AlbumName,
+                FAlbumType = albumsDTO.AlbumType,
+                FReleaseDate = albumsDTO.ReleaseDate
             };
             _context.TAlbums.Add(tobeAdd);
             try
@@ -170,18 +171,18 @@ namespace prjFruitbar8000WebCore.ApiControllers
         {
             if (id is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             TAlbum? album = await _context.TAlbums
                 .Where(x => x.FAlbumId == id)
                 .FirstOrDefaultAsync();
             if (album is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
-            album.FAlbumName = albumsDTO.albumName;
-            album.FAlbumType = albumsDTO.albumType;
-            album.FReleaseDate = albumsDTO.releaseDate;
+            album.FAlbumName = albumsDTO.AlbumName;
+            album.FAlbumType = albumsDTO.AlbumType;
+            album.FReleaseDate = albumsDTO.ReleaseDate;
             _context.TAlbums.Update(album);
             try
             {
@@ -220,7 +221,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         {
             if (id is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             if (await new CheckNavigate(_context).IsAlbumHaveSong((int)id))
             {
@@ -230,7 +231,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
                 .FirstOrDefaultAsync(x => x.FAlbumId == id);
             if (album is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             _context.TAlbums.Remove(album);
             try
@@ -241,7 +242,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
             {
                 return Problem(ex.Message);
             }
-            return Ok(MsgDicionary.messagedeleted);
+            return Ok(MsgDicionary.MessageDeleted);
         }
     }
 }

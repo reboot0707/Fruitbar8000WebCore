@@ -4,8 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Services;
-// 
-using prjFruitbar8000WebCore.Models.ViewModels;
+using prjFruitbar8000WebCore.Models.Wraps;
 
 namespace prjFruitbar8000WebCore.ApiControllers
 {
@@ -63,7 +62,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
             
             if(qResult is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
 
             return Ok(qResult);
@@ -96,21 +95,21 @@ namespace prjFruitbar8000WebCore.ApiControllers
         public async Task<IActionResult> Create([FromBody] GallerySongsDTO newGSong)
         {
             if(newGSong is null
-            || newGSong.songName is null)
+            || newGSong.SongName is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             ResultDTO result = await new GalleryDataAccess().PostCreateApi(newGSong, _context);
 
-            if(result.isSuccess)
+            if(result.IsSuccess)
             {
-                return Ok(result.statusMessage); // return new song info json
+                return Ok(result.StatusMessage); // return new song info json
             }
-            if(result.statusMessage == "NotFound")
+            if(result.StatusMessage == "NotFound")
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
-            return Problem(result.statusMessage);
+            return Problem(result.StatusMessage);
         }
 
         /// <summary>
@@ -144,7 +143,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
             // default value of int is zero, 暗示 payload 部分 id 可以不填, 但不能填錯.
             if(id != newInfoSong.id && newInfoSong.id != 0)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             // Note: (Why use `.Include()`) 
             // 此查詢必須一併載入 TArtistsSongs 與 TSongsAlbums。導覽集合雖已初始化但未代表資料庫內容，
@@ -155,19 +154,19 @@ namespace prjFruitbar8000WebCore.ApiControllers
                 .FirstOrDefault(x => x.FSongId == id);
             if (songToBeUpdated is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             ResultDTO result = await new GalleryDataAccess()
                 .PostEditApi(newInfoSong, songToBeUpdated, _context);
-            if(result.isSuccess)
+            if(result.IsSuccess)
             {
                 return Ok(newInfoSong);
             }
-            if(result.statusMessage == "Not Found")
+            if(result.StatusMessage == "Not Found")
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
-            return Problem(result.statusMessage);
+            return Problem(result.StatusMessage);
         }
 
         /// <summary>
@@ -192,14 +191,14 @@ namespace prjFruitbar8000WebCore.ApiControllers
         public async Task<IActionResult> Delete(int id)
         {
             var result = await new GalleryDataAccess().Delete(id, _context);
-            if(result.isSuccess)
+            if(result.IsSuccess)
             {
-                return Ok(MsgDicionary.messagedeleted);
+                return Ok(MsgDicionary.MessageDeleted);
             }
             else
             {
                 // NEXT-TODO: expand returned info
-                return Problem(result.statusMessage);
+                return Problem(result.StatusMessage);
             }
             
         }

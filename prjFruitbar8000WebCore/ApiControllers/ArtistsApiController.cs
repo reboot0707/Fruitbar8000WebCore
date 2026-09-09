@@ -5,6 +5,7 @@ using prjFruitbar8000WebCore.Models;
 using prjFruitbar8000WebCore.Models.DTOs;
 using prjFruitbar8000WebCore.Models.Entities;
 using prjFruitbar8000WebCore.Models.Services;
+using prjFruitbar8000WebCore.Models.Wraps;
 
 namespace prjFruitbar8000WebCore.ApiControllers
 {
@@ -45,8 +46,8 @@ namespace prjFruitbar8000WebCore.ApiControllers
                     .Select(x => new ArtistsDTO()
                     {
                         id = x.FArtistId,
-                        artistName = x.FArtistName,
-                        artistType = x.FArtistType
+                        ArtistName = x.FArtistName,
+                        ArtistType = x.FArtistType
                     })
                 .ToListAsync();
             }
@@ -85,12 +86,12 @@ namespace prjFruitbar8000WebCore.ApiControllers
             .Select(x => new ArtistsDTO()
             {
                 id = x.FArtistId,
-                artistName = x.FArtistName,
-                artistType = x.FArtistType
+                ArtistName = x.FArtistName,
+                ArtistType = x.FArtistType
             }).FirstOrDefaultAsync();
             if (artist is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             return Ok(artist);
         }
@@ -124,8 +125,8 @@ namespace prjFruitbar8000WebCore.ApiControllers
             }
             var tobeAdd = new TArtist()
             {
-                FArtistName = artistsDTO.artistName,
-                FArtistType = artistsDTO.artistType
+                FArtistName = artistsDTO.ArtistName,
+                FArtistType = artistsDTO.ArtistType
             };
 
             _context.TArtists.Add(tobeAdd);
@@ -168,17 +169,17 @@ namespace prjFruitbar8000WebCore.ApiControllers
         {
             if (id is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             TArtist? artist = await _context.TArtists
                 .Where(x => x.FArtistId == id)
                 .FirstOrDefaultAsync();
             if (artist is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
-            artist.FArtistName = artistsDTO.artistName;
-            artist.FArtistType = artistsDTO.artistType;
+            artist.FArtistName = artistsDTO.ArtistName;
+            artist.FArtistType = artistsDTO.ArtistType;
             _context.TArtists.Update(artist);
             try
             {
@@ -217,7 +218,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         {
             if (id is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             if (await new CheckNavigate(_context).IsArtistHaveSong((int)id))
             {
@@ -227,7 +228,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
                 .FirstOrDefaultAsync(x => x.FArtistId == id);
             if (artist is null)
             {
-                return NotFound(MsgDicionary.message404);
+                return NotFound(MsgDicionary.Message404);
             }
             _context.TArtists.Remove(artist);
             try
@@ -238,7 +239,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
             {
                 return Problem(ex.Message);
             }
-            return Ok(MsgDicionary.messagedeleted);
+            return Ok(MsgDicionary.MessageDeleted);
         }
     }
 }

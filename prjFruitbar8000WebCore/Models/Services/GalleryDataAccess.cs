@@ -16,13 +16,13 @@ public class GalleryDataAccess
     {
         IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        IQueryable<GalleryListViewModel> querylistview = songlistq.SelectMany(song => song.albumIds,
+        IQueryable<GalleryListViewModel> querylistview = songlistq.SelectMany(song => song.AlbumIds,
             (song, albumId) => new GalleryListViewModel
             {
                 id = song.id,
-                SongName = song.songName,
+                SongName = song.SongName,
                 ArtistNames = string.Join('、', inputContext.TArtists
-                    .Where(x => song.artistIds.Contains(x.FArtistId))
+                    .Where(x => song.ArtistIds.Contains(x.FArtistId))
                     .Select(x => x.FArtistName)),
                 AlbumName = inputContext.TAlbums
                     .Where(x => x.FAlbumId == albumId)
@@ -36,13 +36,13 @@ public class GalleryDataAccess
     {
         IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        IQueryable<GallerySongsDTO> querylistDTOs = songlistq.SelectMany(song => song.albumIds,
+        IQueryable<GallerySongsDTO> querylistDTOs = songlistq.SelectMany(song => song.AlbumIds,
             (song, albumName) => new GallerySongsDTO
             {
                 id = song.id,
-                songName = song.songName,
-                artistIds = song.artistIds,
-                albumIds = song.albumIds
+                SongName = song.SongName,
+                ArtistIds = song.ArtistIds,
+                AlbumIds = song.AlbumIds
             });
 
         return await querylistDTOs.ToListAsync();
@@ -56,9 +56,9 @@ public class GalleryDataAccess
             .Select(x => new GallerySongsDTO
             {
                 id = x.FSongId,
-                songName = x.FSongName,
-                artistIds = x.TArtistsSongs.Select(y => y.FArtistId),
-                albumIds = x.TSongsAlbums.Select(y => y.FAlbumId)
+                SongName = x.FSongName,
+                ArtistIds = x.TArtistsSongs.Select(y => y.FArtistId),
+                AlbumIds = x.TSongsAlbums.Select(y => y.FAlbumId)
             });
         return await qResult.FirstOrDefaultAsync();
     }
@@ -104,9 +104,9 @@ public class GalleryDataAccess
         }
         GallerySongsDTO nsDTO = new GallerySongsDTO
         {
-            songName = nsvmSent.SongName,
-            artistIds = nsvmSent.SelectedArtistIdList,
-            albumIds = nsvmSent.SelectedAlbumIdList
+            SongName = nsvmSent.SongName,
+            ArtistIds = nsvmSent.SelectedArtistIdList,
+            AlbumIds = nsvmSent.SelectedAlbumIdList
         };
         ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
     }
@@ -115,9 +115,9 @@ public class GalleryDataAccess
         FruitBarDbContext inputContext)
     {
         if ((nsDTO is null)
-        || string.IsNullOrWhiteSpace(nsDTO.songName))
+        || string.IsNullOrWhiteSpace(nsDTO.SongName))
         {
-            return new ResultDTO() { isSuccess = false, statusMessage = "NotFound" };
+            return new ResultDTO() { IsSuccess = false, StatusMessage = "NotFound" };
         }
         ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
         return result;
@@ -179,8 +179,8 @@ public class GalleryDataAccess
         {
             return new ResultDTO()
             { 
-                isSuccess = false,
-                statusMessage = "Not Found"
+                IsSuccess = false,
+                StatusMessage = "Not Found"
             };
         }
 
@@ -194,7 +194,7 @@ public class GalleryDataAccess
             await InputContext.SaveChangesAsync();
             return new ResultDTO()
             { 
-                isSuccess = true,
+                IsSuccess = true,
             };
         }
         catch (Exception ex)
@@ -202,8 +202,8 @@ public class GalleryDataAccess
             // NEXT-TODO: log error to log file
             return new ResultDTO()
             { 
-                isSuccess = false,
-                statusMessage = ex.Message
+                IsSuccess = false,
+                StatusMessage = ex.Message
             };
         }
     }
@@ -212,27 +212,27 @@ public class GalleryDataAccess
         TSong tobeUpdate,
         FruitBarDbContext InputContext)
     {
-        if (gsDTO.artistIds is null ||
-            gsDTO.albumIds is null ||
-            string.IsNullOrWhiteSpace(gsDTO.songName))
+        if (gsDTO.ArtistIds is null ||
+            gsDTO.AlbumIds is null ||
+            string.IsNullOrWhiteSpace(gsDTO.SongName))
         {
-            return new ResultDTO(){ isSuccess = false, statusMessage = "Not Found"};
+            return new ResultDTO(){ IsSuccess = false, StatusMessage = "Not Found"};
         }
 
-        tobeUpdate.FSongName = gsDTO.songName;
+        tobeUpdate.FSongName = gsDTO.SongName;
 
-        UpdateArtistsSong(gsDTO.artistIds, tobeUpdate, InputContext);
-        await UpdateSongAlbums(gsDTO.albumIds, tobeUpdate, InputContext);
+        UpdateArtistsSong(gsDTO.ArtistIds, tobeUpdate, InputContext);
+        await UpdateSongAlbums(gsDTO.AlbumIds, tobeUpdate, InputContext);
 
         try
         {
             await InputContext.SaveChangesAsync();
-            return new ResultDTO(){ isSuccess = true };
+            return new ResultDTO(){ IsSuccess = true };
         }
         catch (Exception ex)
         {
             // NEXT-TODO: log error to log file
-            return new ResultDTO(){ isSuccess = false, statusMessage = ex.Message};
+            return new ResultDTO(){ IsSuccess = false, StatusMessage = ex.Message};
         }
     }
 
@@ -241,7 +241,7 @@ public class GalleryDataAccess
     {
         if (songId is null)
         {
-            return new ResultDTO() { isSuccess = false, statusMessage = "Not Found"};
+            return new ResultDTO() { IsSuccess = false, StatusMessage = "Not Found"};
         }
         var songToBeDeleted = await InputContext.TSongs
             .Include(x => x.TSongsAlbums)
@@ -249,7 +249,7 @@ public class GalleryDataAccess
             .FirstOrDefaultAsync(x => x.FSongId == songId);
         if (songToBeDeleted is null) // 開始查詢
         {
-            return new ResultDTO() { isSuccess = false, statusMessage = "Not Found"};
+            return new ResultDTO() { IsSuccess = false, StatusMessage = "Not Found"};
         }
         InputContext.RemoveRange(songToBeDeleted.TArtistsSongs);
         InputContext.RemoveRange(songToBeDeleted.TSongsAlbums);
@@ -261,9 +261,9 @@ public class GalleryDataAccess
         catch (Exception ex)
         {
             // NEXT-TODO: expand returned info
-            return new ResultDTO() { isSuccess = false, statusMessage = ex.Message};
+            return new ResultDTO() { IsSuccess = false, StatusMessage = ex.Message};
         }
-        return new ResultDTO() { isSuccess = true };
+        return new ResultDTO() { IsSuccess = true };
     }
 
     ///////////////// section for private methods ///////////////////////
@@ -275,11 +275,11 @@ public class GalleryDataAccess
                 .Select(x => new GallerySongsDTO
                 {
                     id = x.FSongId,
-                    songName = x.FSongName,
-                    artistIds = x.TArtistsSongs
+                    SongName = x.FSongName,
+                    ArtistIds = x.TArtistsSongs
                         .OrderBy(y => y.FArtist.FArtistId)
                         .Select(y => y.FArtist.FArtistId),
-                    albumIds = x.TSongsAlbums
+                    AlbumIds = x.TSongsAlbums
                         .OrderBy(y => y.FAlbum.FAlbumId)
                         .Select(y => y.FAlbum.FAlbumId)
                 });
@@ -292,9 +292,9 @@ public class GalleryDataAccess
 
         var createdSong = new TSong()
         {
-            FSongName = nsDTO.songName!, // assume nsDTO.songName has value when calling this
+            FSongName = nsDTO.SongName!, // assume nsDTO.songName has value when calling this
         };
-        foreach (int artistid in nsDTO.artistIds)
+        foreach (int artistid in nsDTO.ArtistIds)
         {
             createdSong.TArtistsSongs.Add(new TArtistsSong()
             {
@@ -302,7 +302,7 @@ public class GalleryDataAccess
             });
         }
         // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
-        foreach (int albumid in nsDTO.albumIds)
+        foreach (int albumid in nsDTO.AlbumIds)
         {
             int relatedAlbumid = albumid;
             var selectedAlbum = await inputContext.TAlbums
@@ -325,13 +325,13 @@ public class GalleryDataAccess
         {
             inputContext.SaveChanges();
             nsDTO.id = createdSong.FSongId;
-            resultDTO.isSuccess = true;
-            resultDTO.statusMessage = JsonSerializer.Serialize(nsDTO);
+            resultDTO.IsSuccess = true;
+            resultDTO.StatusMessage = JsonSerializer.Serialize(nsDTO);
         }
         catch (Exception ex)
         {
-            resultDTO.isSuccess = false;
-            resultDTO.statusMessage = ex.Message;
+            resultDTO.IsSuccess = false;
+            resultDTO.StatusMessage = ex.Message;
         }
         return resultDTO;
     }

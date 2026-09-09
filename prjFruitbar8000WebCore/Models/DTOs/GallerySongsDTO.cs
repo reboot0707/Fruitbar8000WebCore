@@ -4,8 +4,8 @@ public class GallerySongsDTO
 {
     public int id { get; set; }
 
-    public string? songName { get; set; }
+    public string? SongName { get; set; }
 
-    public IEnumerable<int> artistIds { get; set; } = [];
-    public IEnumerable<int> albumIds { get; set; } = [];
+    public IEnumerable<int> ArtistIds { get; set; } = [];
+    public IEnumerable<int> AlbumIds { get; set; } = [];
 }
