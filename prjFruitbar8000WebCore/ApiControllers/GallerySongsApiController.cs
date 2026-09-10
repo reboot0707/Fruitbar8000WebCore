@@ -21,17 +21,19 @@ namespace prjFruitbar8000WebCore.ApiControllers
         }
         
         /// <summary>
-        /// 取得歌曲清單及其創作者、專輯關聯名稱。
+        /// 取得歌曲清單及其關聯創作者、專輯資料。
         /// </summary>
         /// <remarks>
-        /// GET /apis/v2/gallery/songs；無查詢參數或分頁。回傳欄位為 id、songName、artistNames（創作者名稱陣列）、albumNames（專輯名稱陣列）。
+        /// GET /apis/v2/gallery/songs；無查詢參數或分頁。回傳 GallerySongsDTO 陣列，欄位為 id、songName、relatedArtists、relatedAlbums。
         ///
-        /// 現行 ListApi 依專輯關聯展開：沒有專輯的歌曲不會出現，有多張專輯的歌曲會重複出現，每筆仍包含該歌曲的完整關聯名稱陣列。
+        /// relatedArtists 為物件陣列，每筆包含 id、artistName、artistType；relatedAlbums 為物件陣列，每筆包含 id、albumName、releaseDate、albumType。現行查詢未填入 releaseDate，該欄位回傳 null。
+        ///
+        /// 歌曲依 id 遞增排序，每首歌曲一筆；沒有創作者或專輯關聯的歌曲仍會出現，對應集合為空陣列。兩個關聯集合各自依創作者、專輯 id 遞增排序。
         /// </remarks>
-        /// <returns>GallerySongsListDTO 陣列。</returns>
-        /// <response code="200">查詢成功，回傳 GallerySongsListDTO[]。查無資料時為空陣列。</response>
+        /// <returns>GallerySongsDTO 陣列。</returns>
+        /// <response code="200">查詢成功，回傳 GallerySongsDTO[]。查無資料時為空陣列。</response>
         [HttpGet]
-        [ProducesResponseType(typeof(GallerySongsListDTO[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GallerySongsDTO[]), StatusCodes.Status200OK)]
         public async Task<IActionResult> List()
         {
             var queryList = await new GalleryDataAccess().ListApi(_context);
@@ -40,12 +42,14 @@ namespace prjFruitbar8000WebCore.ApiControllers
         }
 
         /// <summary>
-        /// 依編號取得單一歌曲及其關聯編號。
+        /// 依編號取得單一歌曲及其關聯創作者、專輯資料。
         /// </summary>
         /// <remarks>
-        /// GET /apis/v2/gallery/songs/{id}；回傳欄位為 id、songName、artistIds（創作者編號陣列）、albumIds（專輯編號陣列）。
+        /// GET /apis/v2/gallery/songs/{id}；回傳欄位為 id、songName、relatedArtists、relatedAlbums。
         ///
-        /// 直接依歌曲編號查詢，沒有專輯關聯的歌曲也可取得。
+        /// relatedArtists 每筆包含 id、artistName、artistType；relatedAlbums 每筆包含 id、albumName、releaseDate、albumType。現行查詢未填入 releaseDate，該欄位回傳 null。
+        ///
+        /// 沒有創作者或專輯關聯的歌曲也可取得，對應集合為空陣列。兩個關聯集合各自依創作者、專輯 id 遞增排序。
         /// </remarks>
         /// <param name="id">路徑中的歌曲整數編號。</param>
         /// <returns>GallerySongsDTO 或找不到資料的訊息字串。</returns>
@@ -76,15 +80,18 @@ namespace prjFruitbar8000WebCore.ApiControllers
         ///
         /// songName 不可為 null、空字串或全空白；資料庫長度上限為 200 字元，DTO 未設定長度驗證。本文 id 不用指定，由資料庫產生。
         ///
-        /// artistIds、albumIds 為整數陣列，省略時預設為空陣列。創作者編號須存在；不存在的專輯編號會被略過。新增專輯關聯時自動分配從 1 起最小可用曲目編號。
+        /// relatedArtists、relatedAlbums 為物件陣列，不可為 null，省略時預設為空陣列；空陣列表示不建立該類關聯。
         ///
-        /// 成功回傳以 JSON 序列化的 DTO 字串，包含新 id 與原請求的欄位；albumIds 可能仍包含已被略過的編號，並非重新查詢的結果。
+        /// relatedArtists 每筆包含 id、artistName、artistType；relatedAlbums 每筆包含 id、albumName、releaseDate、albumType。artistName、albumName 為非 Nullable 欄位，依目前模型驗證設定不可省略或傳入 null；artistType、albumType、releaseDate 可省略或為 null。
         ///
+        /// 寫入關聯時只使用各物件的 id，不會新增或修改創作者、專輯的名稱、類型或發行日期。創作者編號須存在；不存在的專輯編號會被略過。各集合內的 id 應避免重複。新增專輯關聯時自動分配從 1 起最小可用曲目編號。
+        ///
+        /// 成功回傳以 JSON 序列化的 DTO 字串，包含新 id 與原請求資料，未重新查詢關聯內容；RelatedAlbums 可能仍包含已被略過的專輯。字串內使用 DTO 原始屬性名稱：id、SongName、RelatedArtists、RelatedAlbums，內層亦保留 ArtistName、AlbumName 等原始大小寫。
         /// </remarks>
-        /// <param name="newGSong">歌曲名稱與欲建立的關聯編號；關聯編號應避免重複。</param>
+        /// <param name="newGSong">歌曲名稱與 relatedArtists、relatedAlbums 關聯物件陣列；每筆以 id 指定關聯對象，並提供模型驗證所需的名稱欄位。</param>
         /// <returns>包含新增歌曲資訊的 JSON 字串。</returns>
         /// <response code="200">新增成功，回傳包含新 id 與原請求欄位的 GallerySongsDTO JSON 字串。</response>
-        /// <response code="400">JSON 本文或模型驗證失敗。</response>
+        /// <response code="400">JSON 本文或模型驗證失敗，例如關聯集合為 null，或關聯物件缺少必要的名稱欄位。</response>
         /// <response code="404">進入方法後本文為 null 或歌曲名稱為 null、空字串、全空白。</response>
         /// <response code="500">服務回報儲存失敗時回傳 ProblemDetails。</response>
         [HttpPost]
@@ -120,18 +127,22 @@ namespace prjFruitbar8000WebCore.ApiControllers
         ///
         /// 本文 id 可省略或為 0；非 0 時必須與路徑 id 一致。songName 不可為 null、空字串或全空白，資料庫長度上限為 200 字元，DTO 未設定長度驗證。
         ///
-        /// artistIds、albumIds 不可為 null；省略時預設為空陣列，空陣列會清空對應關聯。保留仍被選取的關聯、移除未選取的關聯並新增缺少的關聯，並非僅附加。
+        /// relatedArtists、relatedAlbums 為物件陣列，不可為 null；省略時預設為空陣列，空陣列會清空對應關聯。保留仍被選取的關聯、移除未選取的關聯並新增缺少的關聯，並非僅附加。
+        ///
+        /// relatedArtists 每筆包含 id、artistName、artistType；relatedAlbums 每筆包含 id、albumName、releaseDate、albumType。artistName、albumName 為非 Nullable 欄位，依目前模型驗證設定不可省略或傳入 null；artistType、albumType、releaseDate 可省略或為 null。
+        ///
+        /// 更新關聯時只使用各物件的 id，不會修改創作者、專輯的名稱、類型或發行日期。
         ///
         /// 創作者編號須存在且應避免重複；不存在的專輯編號會被略過。新專輯關聯自動分配從 1 起最小可用曲目編號，既有關聯保留曲目編號。
         ///
-        /// 成功回傳原請求 DTO，未重新查詢；本文 id 若省略仍回傳 0，albumIds 也可能包含被略過的編號。
+        /// 成功回傳原請求 DTO，欄位為 id、songName、relatedArtists、relatedAlbums，未重新查詢；本文 id 若省略仍回傳 0，relatedAlbums 也可能包含被略過的專輯。關聯物件的名稱、類型與發行日期為請求值，不代表資料庫目前內容。
         /// </remarks>
         /// <param name="id">路徑中的歌曲整數編號，作為實際更新目標。</param>
-        /// <param name="newInfoSong">完整更新內容：id、songName、artistIds、albumIds。</param>
+        /// <param name="newInfoSong">完整更新內容：id、songName、relatedArtists、relatedAlbums；關聯集合須提供欲保留的全部關聯物件，並包含模型驗證所需的名稱欄位。</param>
         /// <returns>請求中的 GallerySongsDTO。</returns>
-        /// <response code="200">更新成功，回傳 GallerySongsDTO。內容為原請求 DTO；省略的 id 仍為 0，albumIds 可能包含被略過的編號。</response>
-        /// <response code="400">路徑 id、JSON 本文或模型驗證失敗。</response>
-        /// <response code="404">本文 id 不符、查無歌曲，或服務檢查發現名稱無效或關聯集合為 null。</response>
+        /// <response code="200">更新成功，回傳原請求 GallerySongsDTO；省略的 id 仍為 0，relatedAlbums 可能包含被略過的專輯。</response>
+        /// <response code="400">路徑 id、JSON 本文或模型驗證失敗，例如關聯集合為 null，或關聯物件缺少必要的名稱欄位。</response>
+        /// <response code="404">本文 id 不符、查無歌曲，或進入服務後檢查發現名稱無效或關聯集合為 null；回傳內容為 { "message": "Not Found" } 的字串。</response>
         /// <response code="500">服務回報儲存失敗時回傳 ProblemDetails。</response>
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(GallerySongsDTO), StatusCodes.Status200OK)]

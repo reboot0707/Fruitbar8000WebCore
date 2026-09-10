@@ -16,66 +16,32 @@ public class GalleryDataAccess
     {
         IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        IQueryable<GalleryListViewModel> querylistview = songlistq.SelectMany(song => song.AlbumIds,
-            (song, albumId) => new GalleryListViewModel
+        IQueryable<GalleryListViewModel> querylistview = songlistq.SelectMany(song => song.RelatedAlbums,
+            (song, relatedAlbum) => new GalleryListViewModel
             {
                 id = song.id,
                 SongName = song.SongName,
-                ArtistNames = string.Join('、', inputContext.TArtists
-                    .Where(x => song.ArtistIds.Contains(x.FArtistId))
-                    .Select(x => x.FArtistName)),
-                AlbumName = inputContext.TAlbums
-                    .Where(x => x.FAlbumId == albumId)
-                    .Select(x => x.FAlbumName)
-                    .FirstOrDefault()
+                ArtistNames = string.Join('、', song.RelatedArtists.Select(x => x.ArtistName)),
+                AlbumName = relatedAlbum.AlbumName
             });
         return await querylistview.ToListAsync();
     }
 
-    public async Task<List<GallerySongsListDTO>> ListApi(FruitBarDbContext inputContext)
+    public async Task<List<GallerySongsDTO>> ListApi(FruitBarDbContext inputContext)
     {
         IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        IQueryable<GallerySongsListDTO> querylistDTOs = songlistq.SelectMany(song => song.AlbumIds,
-            (song, albumId) => new GallerySongsListDTO
-            {
-                id = song.id,
-                SongName = song.SongName,
-                RelatedArtists = inputContext.TArtists
-                    .Where(x => song.ArtistIds
-                        .Contains(x.FArtistId))
-                        .Select(x => new ArtistsDTO()
-                        {
-                            id = x.FArtistId,
-                            ArtistName = x.FArtistName,
-                            ArtistType = x.FArtistType
-                        }),
-                RelatedAlbums = inputContext.TAlbums
-                    .Where(x => song.AlbumIds
-                        .Contains(x.FAlbumId))
-                        .Select(x => new AlbumsDTO()
-                        {
-                            id = x.FAlbumId,
-                            AlbumName = x.FAlbumName,
-                            AlbumType = x.FAlbumType
-                        }),
-            });
-
-        return await querylistDTOs.ToListAsync();
+        return await songlistq.ToListAsync();
     }
 
     public async Task<GallerySongsDTO?> ListApiById(int id,
         FruitBarDbContext inputContext)
     {
-        var qResult = inputContext.TSongs
-            .Where(x => x.FSongId == id)
-            .Select(x => new GallerySongsDTO
-            {
-                id = x.FSongId,
-                SongName = x.FSongName,
-                ArtistIds = x.TArtistsSongs.Select(y => y.FArtistId),
-                AlbumIds = x.TSongsAlbums.Select(y => y.FAlbumId)
-            });
+        IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
+        
+        var qResult = songlistq
+            .Where(x => x.id == id);
+
         return await qResult.FirstOrDefaultAsync();
     }
 
@@ -121,8 +87,22 @@ public class GalleryDataAccess
         GallerySongsDTO nsDTO = new GallerySongsDTO
         {
             SongName = nsvmSent.SongName,
-            ArtistIds = nsvmSent.SelectedArtistIdList,
-            AlbumIds = nsvmSent.SelectedAlbumIdList
+            RelatedArtists = inputContext.TArtists
+                .Where(x => nsvmSent.SelectedArtistIdList.Contains(x.FArtistId))
+                .Select(x => new ArtistsDTO()
+                {
+                    id = x.FArtistId,
+                    ArtistName = x.FArtistName,
+                    ArtistType = x.FArtistType
+                }),
+            RelatedAlbums = inputContext.TAlbums
+                .Where(x => nsvmSent.SelectedAlbumIdList.Contains(x.FAlbumId))
+                .Select(x => new AlbumsDTO()
+                {
+                    id = x.FAlbumId,
+                    AlbumName = x.FAlbumName,
+                    AlbumType = x.FAlbumType
+                }),
         };
         ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
     }
@@ -228,8 +208,8 @@ public class GalleryDataAccess
         TSong tobeUpdate,
         FruitBarDbContext InputContext)
     {
-        if (gsDTO.ArtistIds is null ||
-            gsDTO.AlbumIds is null ||
+        if (gsDTO.RelatedArtists is null ||
+            gsDTO.RelatedAlbums is null ||
             string.IsNullOrWhiteSpace(gsDTO.SongName))
         {
             return new ResultDTO(){ IsSuccess = false, StatusMessage = "Not Found"};
@@ -237,8 +217,12 @@ public class GalleryDataAccess
 
         tobeUpdate.FSongName = gsDTO.SongName;
 
-        UpdateArtistsSong(gsDTO.ArtistIds, tobeUpdate, InputContext);
-        await UpdateSongAlbums(gsDTO.AlbumIds, tobeUpdate, InputContext);
+        UpdateArtistsSong(
+            gsDTO.RelatedArtists.Select(x => x.id).AsEnumerable(),
+            tobeUpdate, InputContext);
+        await UpdateSongAlbums(
+            gsDTO.RelatedAlbums.Select(x => x.id).AsEnumerable(),
+            tobeUpdate, InputContext);
 
         try
         {
@@ -292,12 +276,22 @@ public class GalleryDataAccess
                 {
                     id = x.FSongId,
                     SongName = x.FSongName,
-                    ArtistIds = x.TArtistsSongs
+                    RelatedArtists = x.TArtistsSongs
                         .OrderBy(y => y.FArtist.FArtistId)
-                        .Select(y => y.FArtist.FArtistId),
-                    AlbumIds = x.TSongsAlbums
+                        .Select(y => new ArtistsDTO()
+                        {
+                            id = y.FArtistId,
+                            ArtistName = y.FArtist.FArtistName,
+                            ArtistType = y.FArtist.FArtistType
+                        }),
+                    RelatedAlbums = x.TSongsAlbums
                         .OrderBy(y => y.FAlbum.FAlbumId)
-                        .Select(y => y.FAlbum.FAlbumId)
+                        .Select(y => new AlbumsDTO()
+                        {
+                            id = y.FAlbumId,
+                            AlbumName = y.FAlbum.FAlbumName,
+                            AlbumType = y.FAlbum.FAlbumType
+                        })
                 });
     }
 
@@ -310,7 +304,7 @@ public class GalleryDataAccess
         {
             FSongName = nsDTO.SongName!, // assume nsDTO.songName has value when calling this
         };
-        foreach (int artistid in nsDTO.ArtistIds)
+        foreach (int artistid in nsDTO.RelatedArtists.Select(x => x.id))
         {
             createdSong.TArtistsSongs.Add(new TArtistsSong()
             {
@@ -318,7 +312,7 @@ public class GalleryDataAccess
             });
         }
         // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
-        foreach (int albumid in nsDTO.AlbumIds)
+        foreach (int albumid in nsDTO.RelatedAlbums.Select(x => x.id))
         {
             int relatedAlbumid = albumid;
             var selectedAlbum = await inputContext.TAlbums

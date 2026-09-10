@@ -6,6 +6,6 @@ public class GallerySongsDTO
 
     public string? SongName { get; set; }
 
-    public IEnumerable<int> ArtistIds { get; set; } = [];
-    public IEnumerable<int> AlbumIds { get; set; } = [];
+    public IEnumerable<ArtistsDTO> RelatedArtists { get; set; } = [];
+    public IEnumerable<AlbumsDTO> RelatedAlbums { get; set; } = [];
 }
