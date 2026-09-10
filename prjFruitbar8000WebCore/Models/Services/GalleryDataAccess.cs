@@ -41,14 +41,24 @@ public class GalleryDataAccess
             {
                 id = song.id,
                 SongName = song.SongName,
-                ArtistNames = inputContext.TArtists
+                RelatedArtists = inputContext.TArtists
                     .Where(x => song.ArtistIds
                         .Contains(x.FArtistId))
-                        .Select(x => x.FArtistName),
-                AlbumNames = inputContext.TAlbums
+                        .Select(x => new ArtistsDTO()
+                        {
+                            id = x.FArtistId,
+                            ArtistName = x.FArtistName,
+                            ArtistType = x.FArtistType
+                        }),
+                RelatedAlbums = inputContext.TAlbums
                     .Where(x => song.AlbumIds
                         .Contains(x.FAlbumId))
-                        .Select(x => x.FAlbumName)
+                        .Select(x => new AlbumsDTO()
+                        {
+                            id = x.FAlbumId,
+                            AlbumName = x.FAlbumName,
+                            AlbumType = x.FAlbumType
+                        }),
             });
 
         return await querylistDTOs.ToListAsync();
