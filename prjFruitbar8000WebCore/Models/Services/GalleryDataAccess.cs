@@ -87,22 +87,24 @@ public class GalleryDataAccess
         GallerySongsDTO nsDTO = new GallerySongsDTO
         {
             SongName = nsvmSent.SongName,
-            RelatedArtists = inputContext.TArtists
+            RelatedArtists = await inputContext.TArtists
                 .Where(x => nsvmSent.SelectedArtistIdList.Contains(x.FArtistId))
                 .Select(x => new ArtistsDTO()
                 {
                     id = x.FArtistId,
                     ArtistName = x.FArtistName,
                     ArtistType = x.FArtistType
-                }),
-            RelatedAlbums = inputContext.TAlbums
+                })
+                .ToListAsync(),
+            RelatedAlbums = await inputContext.TAlbums
                 .Where(x => nsvmSent.SelectedAlbumIdList.Contains(x.FAlbumId))
                 .Select(x => new AlbumsDTO()
                 {
                     id = x.FAlbumId,
                     AlbumName = x.FAlbumName,
                     AlbumType = x.FAlbumType
-                }),
+                })
+                .ToListAsync(),
         };
         ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
     }
