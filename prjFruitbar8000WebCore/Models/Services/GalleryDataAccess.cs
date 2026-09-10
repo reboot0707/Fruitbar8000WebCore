@@ -32,17 +32,23 @@ public class GalleryDataAccess
         return await querylistview.ToListAsync();
     }
 
-    public async Task<List<GallerySongsDTO>> ListApi(FruitBarDbContext inputContext)
+    public async Task<List<GallerySongsListDTO>> ListApi(FruitBarDbContext inputContext)
     {
         IQueryable<GallerySongsDTO> songlistq = GetGallerySongsRaw(inputContext);
 
-        IQueryable<GallerySongsDTO> querylistDTOs = songlistq.SelectMany(song => song.AlbumIds,
-            (song, albumName) => new GallerySongsDTO
+        IQueryable<GallerySongsListDTO> querylistDTOs = songlistq.SelectMany(song => song.AlbumIds,
+            (song, albumId) => new GallerySongsListDTO
             {
                 id = song.id,
                 SongName = song.SongName,
-                ArtistIds = song.ArtistIds,
-                AlbumIds = song.AlbumIds
+                ArtistNames = inputContext.TArtists
+                    .Where(x => song.ArtistIds
+                        .Contains(x.FArtistId))
+                        .Select(x => x.FArtistName),
+                AlbumNames = inputContext.TAlbums
+                    .Where(x => song.AlbumIds
+                        .Contains(x.FAlbumId))
+                        .Select(x => x.FAlbumName)
             });
 
         return await querylistDTOs.ToListAsync();

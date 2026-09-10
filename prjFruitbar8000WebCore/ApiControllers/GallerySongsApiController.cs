@@ -21,17 +21,17 @@ namespace prjFruitbar8000WebCore.ApiControllers
         }
         
         /// <summary>
-        /// 取得歌曲清單及其創作者、專輯關聯編號。
+        /// 取得歌曲清單及其創作者、專輯關聯名稱。
         /// </summary>
         /// <remarks>
-        /// GET /apis/v2/gallery/songs；無查詢參數或分頁。回傳欄位為 id、songName、artistIds（創作者編號陣列）、albumIds（專輯編號陣列）。
+        /// GET /apis/v2/gallery/songs；無查詢參數或分頁。回傳欄位為 id、songName、artistNames（創作者名稱陣列）、albumNames（專輯名稱陣列）。
         ///
-        /// 現行 ListApi 依專輯關聯展開：沒有專輯的歌曲不會出現，有多張專輯的歌曲會重複出現，每筆仍包含該歌曲的完整關聯編號陣列。
+        /// 現行 ListApi 依專輯關聯展開：沒有專輯的歌曲不會出現，有多張專輯的歌曲會重複出現，每筆仍包含該歌曲的完整關聯名稱陣列。
         /// </remarks>
-        /// <returns>GallerySongsDTO 陣列。</returns>
-        /// <response code="200">查詢成功，回傳 GallerySongsDTO[]。查無資料時為空陣列。</response>
+        /// <returns>GallerySongsListDTO 陣列。</returns>
+        /// <response code="200">查詢成功，回傳 GallerySongsListDTO[]。查無資料時為空陣列。</response>
         [HttpGet]
-        [ProducesResponseType(typeof(GallerySongsDTO[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GallerySongsListDTO[]), StatusCodes.Status200OK)]
         public async Task<IActionResult> List()
         {
             var queryList = await new GalleryDataAccess().ListApi(_context);
