@@ -85,14 +85,15 @@ namespace prjFruitbar8000WebCore.ApiControllers
         /// 創作者編號須存在；不存在的專輯編號會被略過。各集合內的編號應避免重複。新增專輯關聯時自動分配從 1 起最小可用曲目編號，不會新增或修改創作者、專輯本身。
         ///
         /// 請求範例（關聯編號請替換為資料庫中的既有編號）：
-        /// <code>
+        /// 
+        /// ```
         /// {
         ///   "songName": "範例歌曲",
         ///   "relatedArtistIds": [1, 2],
         ///   "relatedAlbumIds": [3]
         /// }
-        /// </code>
-        ///
+        /// ```
+        /// 
         /// 成功回傳以 JSON 序列化的 GallerySongsWriteDTO 字串，包含資料庫產生的新 id 與原請求資料，未重新查詢關聯內容；RelatedAlbumIds 可能仍包含已被略過的專輯編號。字串內使用 DTO 原始屬性名稱：id、SongName、RelatedArtistIds、RelatedAlbumIds。
         ///
         /// POST 與 PUT 請求皆使用 GallerySongsWriteDTO 的 ID 陣列；GET 回傳使用 GallerySongsDTO 的 relatedArtists、relatedAlbums 物件陣列。
