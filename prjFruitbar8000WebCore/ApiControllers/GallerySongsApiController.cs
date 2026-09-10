@@ -80,18 +80,27 @@ namespace prjFruitbar8000WebCore.ApiControllers
         ///
         /// songName 不可為 null、空字串或全空白；資料庫長度上限為 200 字元，DTO 未設定長度驗證。本文 id 不用指定，由資料庫產生。
         ///
-        /// relatedArtists、relatedAlbums 為物件陣列，不可為 null，省略時預設為空陣列；空陣列表示不建立該類關聯。
+        /// relatedArtistIds、relatedAlbumIds 為整數陣列，不可為 null，省略時預設為空陣列；空陣列表示不建立該類關聯。只需提供既有創作者、專輯的編號，不需提供名稱、類型或發行日期。
         ///
-        /// relatedArtists 每筆包含 id、artistName、artistType；relatedAlbums 每筆包含 id、albumName、releaseDate、albumType。artistName、albumName 為非 Nullable 欄位，依目前模型驗證設定不可省略或傳入 null；artistType、albumType、releaseDate 可省略或為 null。
+        /// 創作者編號須存在；不存在的專輯編號會被略過。各集合內的編號應避免重複。新增專輯關聯時自動分配從 1 起最小可用曲目編號，不會新增或修改創作者、專輯本身。
         ///
-        /// 寫入關聯時只使用各物件的 id，不會新增或修改創作者、專輯的名稱、類型或發行日期。創作者編號須存在；不存在的專輯編號會被略過。各集合內的 id 應避免重複。新增專輯關聯時自動分配從 1 起最小可用曲目編號。
+        /// 請求範例（關聯編號請替換為資料庫中的既有編號）：
+        /// <code>
+        /// {
+        ///   "songName": "範例歌曲",
+        ///   "relatedArtistIds": [1, 2],
+        ///   "relatedAlbumIds": [3]
+        /// }
+        /// </code>
         ///
-        /// 成功回傳以 JSON 序列化的 DTO 字串，包含新 id 與原請求資料，未重新查詢關聯內容；RelatedAlbums 可能仍包含已被略過的專輯。字串內使用 DTO 原始屬性名稱：id、SongName、RelatedArtists、RelatedAlbums，內層亦保留 ArtistName、AlbumName 等原始大小寫。
+        /// 成功回傳以 JSON 序列化的 GallerySongsWriteDTO 字串，包含資料庫產生的新 id 與原請求資料，未重新查詢關聯內容；RelatedAlbumIds 可能仍包含已被略過的專輯編號。字串內使用 DTO 原始屬性名稱：id、SongName、RelatedArtistIds、RelatedAlbumIds。
+        ///
+        /// POST 與 PUT 請求皆使用 GallerySongsWriteDTO 的 ID 陣列；GET 回傳使用 GallerySongsDTO 的 relatedArtists、relatedAlbums 物件陣列。
         /// </remarks>
-        /// <param name="newGSong">歌曲名稱與 relatedArtists、relatedAlbums 關聯物件陣列；每筆以 id 指定關聯對象，並提供模型驗證所需的名稱欄位。</param>
-        /// <returns>包含新增歌曲資訊的 JSON 字串。</returns>
-        /// <response code="200">新增成功，回傳包含新 id 與原請求欄位的 GallerySongsDTO JSON 字串。</response>
-        /// <response code="400">JSON 本文或模型驗證失敗，例如關聯集合為 null，或關聯物件缺少必要的名稱欄位。</response>
+        /// <param name="newGSong">新增歌曲資料：songName、relatedArtistIds、relatedAlbumIds；id 可省略，傳入值不作為新歌曲編號。</param>
+        /// <returns>包含新增歌曲資訊的 GallerySongsWriteDTO JSON 字串。</returns>
+        /// <response code="200">新增成功，回傳包含新 id、SongName、RelatedArtistIds、RelatedAlbumIds 的 JSON 字串。</response>
+        /// <response code="400">JSON 本文或模型驗證失敗，例如關聯集合為 null，或集合元素無法繫結為整數。</response>
         /// <response code="404">進入方法後本文為 null 或歌曲名稱為 null、空字串、全空白。</response>
         /// <response code="500">服務回報儲存失敗時回傳 ProblemDetails。</response>
         [HttpPost]
@@ -99,7 +108,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Create([FromBody] GallerySongsDTO newGSong)
+        public async Task<IActionResult> Create([FromBody] GallerySongsWriteDTO newGSong)
         {
             if(newGSong is null
             || newGSong.SongName is null)
@@ -127,29 +136,36 @@ namespace prjFruitbar8000WebCore.ApiControllers
         ///
         /// 本文 id 可省略或為 0；非 0 時必須與路徑 id 一致。songName 不可為 null、空字串或全空白，資料庫長度上限為 200 字元，DTO 未設定長度驗證。
         ///
-        /// relatedArtists、relatedAlbums 為物件陣列，不可為 null；省略時預設為空陣列，空陣列會清空對應關聯。保留仍被選取的關聯、移除未選取的關聯並新增缺少的關聯，並非僅附加。
+        /// relatedArtistIds、relatedAlbumIds 為整數陣列，不可為 null；省略時預設為空陣列，空陣列會清空對應關聯。須提供欲保留的完整編號集合：保留仍被選取的關聯、移除未選取的關聯並新增缺少的關聯。
         ///
-        /// relatedArtists 每筆包含 id、artistName、artistType；relatedAlbums 每筆包含 id、albumName、releaseDate、albumType。artistName、albumName 為非 Nullable 欄位，依目前模型驗證設定不可省略或傳入 null；artistType、albumType、releaseDate 可省略或為 null。
-        ///
-        /// 更新關聯時只使用各物件的 id，不會修改創作者、專輯的名稱、類型或發行日期。
+        /// 只需提供既有創作者、專輯的編號，不需提供名稱、類型或發行日期；不會修改創作者、專輯本身。
         ///
         /// 創作者編號須存在且應避免重複；不存在的專輯編號會被略過。新專輯關聯自動分配從 1 起最小可用曲目編號，既有關聯保留曲目編號。
         ///
-        /// 成功回傳原請求 DTO，欄位為 id、songName、relatedArtists、relatedAlbums，未重新查詢；本文 id 若省略仍回傳 0，relatedAlbums 也可能包含被略過的專輯。關聯物件的名稱、類型與發行日期為請求值，不代表資料庫目前內容。
+        /// 請求範例（關聯編號請替換為資料庫中的既有編號；此範例會清空專輯關聯）：
+        /// <code>
+        /// {
+        ///   "songName": "更新後的歌曲名稱",
+        ///   "relatedArtistIds": [1, 2],
+        ///   "relatedAlbumIds": []
+        /// }
+        /// </code>
+        ///
+        /// 成功回傳原請求 GallerySongsWriteDTO 物件，欄位為 id、songName、relatedArtistIds、relatedAlbumIds，未重新查詢；本文 id 若省略仍回傳 0，relatedAlbumIds 也可能包含被略過的專輯編號。欲取得儲存後的歌曲與關聯物件，請呼叫 GET /apis/v2/gallery/songs/{id}。
         /// </remarks>
         /// <param name="id">路徑中的歌曲整數編號，作為實際更新目標。</param>
-        /// <param name="newInfoSong">完整更新內容：id、songName、relatedArtists、relatedAlbums；關聯集合須提供欲保留的全部關聯物件，並包含模型驗證所需的名稱欄位。</param>
-        /// <returns>請求中的 GallerySongsDTO。</returns>
-        /// <response code="200">更新成功，回傳原請求 GallerySongsDTO；省略的 id 仍為 0，relatedAlbums 可能包含被略過的專輯。</response>
-        /// <response code="400">路徑 id、JSON 本文或模型驗證失敗，例如關聯集合為 null，或關聯物件缺少必要的名稱欄位。</response>
+        /// <param name="newInfoSong">完整更新內容：id、songName、relatedArtistIds、relatedAlbumIds；關聯集合須提供欲保留的全部編號，省略或空陣列會清空對應關聯。</param>
+        /// <returns>請求中的 GallerySongsWriteDTO 物件。</returns>
+        /// <response code="200">更新成功，回傳原請求 GallerySongsWriteDTO；省略的 id 仍為 0，relatedAlbumIds 可能包含被略過的專輯編號。</response>
+        /// <response code="400">路徑 id、JSON 本文或模型驗證失敗，例如關聯集合為 null，或集合元素無法繫結為整數。</response>
         /// <response code="404">本文 id 不符、查無歌曲，或進入服務後檢查發現名稱無效或關聯集合為 null；回傳內容為 { "message": "Not Found" } 的字串。</response>
         /// <response code="500">服務回報儲存失敗時回傳 ProblemDetails。</response>
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(GallerySongsDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GallerySongsWriteDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Update(int id, [FromBody] GallerySongsDTO newInfoSong)
+        public async Task<IActionResult> Update(int id, [FromBody] GallerySongsWriteDTO newInfoSong)
         {
             // default value of int is zero, 暗示 payload 部分 id 可以不填, 但不能填錯.
             if(id != newInfoSong.id && newInfoSong.id != 0)

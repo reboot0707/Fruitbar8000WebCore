@@ -84,40 +84,30 @@ public class GalleryDataAccess
         {
             return;
         }
-        GallerySongsDTO nsDTO = new GallerySongsDTO
+        GallerySongsWriteDTO nsWDTO = new GallerySongsWriteDTO
         {
             SongName = nsvmSent.SongName,
-            RelatedArtists = await inputContext.TArtists
+            RelatedArtistIds = await inputContext.TArtists
                 .Where(x => nsvmSent.SelectedArtistIdList.Contains(x.FArtistId))
-                .Select(x => new ArtistsDTO()
-                {
-                    id = x.FArtistId,
-                    ArtistName = x.FArtistName,
-                    ArtistType = x.FArtistType
-                })
+                .Select(x => x.FArtistId)
                 .ToListAsync(),
-            RelatedAlbums = await inputContext.TAlbums
+            RelatedAlbumIds = await inputContext.TAlbums
                 .Where(x => nsvmSent.SelectedAlbumIdList.Contains(x.FAlbumId))
-                .Select(x => new AlbumsDTO()
-                {
-                    id = x.FAlbumId,
-                    AlbumName = x.FAlbumName,
-                    AlbumType = x.FAlbumType
-                })
+                .Select(x => x.FAlbumId)
                 .ToListAsync(),
         };
-        ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
+        ResultDTO result = await CreateGallerySongCommon(nsWDTO, inputContext);
     }
 
-    public async Task<ResultDTO> PostCreateApi(GallerySongsDTO nsDTO,
+    public async Task<ResultDTO> PostCreateApi(GallerySongsWriteDTO nsWDTO,
         FruitBarDbContext inputContext)
     {
-        if ((nsDTO is null)
-        || string.IsNullOrWhiteSpace(nsDTO.SongName))
+        if ((nsWDTO is null)
+        || string.IsNullOrWhiteSpace(nsWDTO.SongName))
         {
             return new ResultDTO() { IsSuccess = false, StatusMessage = "NotFound" };
         }
-        ResultDTO result = await CreateGallerySongCommon(nsDTO, inputContext);
+        ResultDTO result = await CreateGallerySongCommon(nsWDTO, inputContext);
         return result;
     }
 
@@ -206,12 +196,12 @@ public class GalleryDataAccess
         }
     }
 
-    public async Task<ResultDTO> PostEditApi(GallerySongsDTO gsDTO,
+    public async Task<ResultDTO> PostEditApi(GallerySongsWriteDTO gsDTO,
         TSong tobeUpdate,
         FruitBarDbContext InputContext)
     {
-        if (gsDTO.RelatedArtists is null ||
-            gsDTO.RelatedAlbums is null ||
+        if (gsDTO.RelatedArtistIds is null ||
+            gsDTO.RelatedAlbumIds is null ||
             string.IsNullOrWhiteSpace(gsDTO.SongName))
         {
             return new ResultDTO(){ IsSuccess = false, StatusMessage = "Not Found"};
@@ -220,10 +210,10 @@ public class GalleryDataAccess
         tobeUpdate.FSongName = gsDTO.SongName;
 
         UpdateArtistsSong(
-            gsDTO.RelatedArtists.Select(x => x.id).AsEnumerable(),
+            gsDTO.RelatedArtistIds.AsEnumerable(),
             tobeUpdate, InputContext);
         await UpdateSongAlbums(
-            gsDTO.RelatedAlbums.Select(x => x.id).AsEnumerable(),
+            gsDTO.RelatedAlbumIds.AsEnumerable(),
             tobeUpdate, InputContext);
 
         try
@@ -297,16 +287,16 @@ public class GalleryDataAccess
                 });
     }
 
-    private static async Task<ResultDTO> CreateGallerySongCommon(GallerySongsDTO nsDTO,
+    private static async Task<ResultDTO> CreateGallerySongCommon(GallerySongsWriteDTO nsWDTO,
         FruitBarDbContext inputContext)
     {
         ResultDTO resultDTO = new ResultDTO();
 
         var createdSong = new TSong()
         {
-            FSongName = nsDTO.SongName!, // assume nsDTO.songName has value when calling this
+            FSongName = nsWDTO.SongName!, // assume nsDTO.songName has value when calling this
         };
-        foreach (int artistid in nsDTO.RelatedArtists.Select(x => x.id))
+        foreach (int artistid in nsWDTO.RelatedArtistIds)
         {
             createdSong.TArtistsSongs.Add(new TArtistsSong()
             {
@@ -314,7 +304,7 @@ public class GalleryDataAccess
             });
         }
         // NEXT-TODO: 初步先讓專輯歌曲編號合法不重複, 後續研議改資料庫約束條件或是優化指定/檢查機制
-        foreach (int albumid in nsDTO.RelatedAlbums.Select(x => x.id))
+        foreach (int albumid in nsWDTO.RelatedAlbumIds)
         {
             int relatedAlbumid = albumid;
             var selectedAlbum = await inputContext.TAlbums
@@ -336,9 +326,9 @@ public class GalleryDataAccess
         try
         {
             inputContext.SaveChanges();
-            nsDTO.id = createdSong.FSongId;
+            nsWDTO.id = createdSong.FSongId;
             resultDTO.IsSuccess = true;
-            resultDTO.StatusMessage = JsonSerializer.Serialize(nsDTO);
+            resultDTO.StatusMessage = JsonSerializer.Serialize(nsWDTO);
         }
         catch (Exception ex)
         {
