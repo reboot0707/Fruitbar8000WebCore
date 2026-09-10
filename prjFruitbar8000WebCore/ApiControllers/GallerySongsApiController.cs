@@ -32,7 +32,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         /// <response code="200">查詢成功，回傳 GallerySongsDTO[]。查無資料時為空陣列。</response>
         [HttpGet]
         [ProducesResponseType(typeof(GallerySongsDTO[]), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> List()
         {
             var queryList = await new GalleryDataAccess().ListApi(_context);
 
@@ -56,7 +56,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         [ProducesResponseType(typeof(GallerySongsDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> List(int id)
         {        
             GallerySongsDTO? qResult = await new GalleryDataAccess().ListApiById(id, _context);
             

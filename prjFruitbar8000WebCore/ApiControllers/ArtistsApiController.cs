@@ -36,7 +36,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         [ProducesResponseType(typeof(ArtistsDTO[]), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> List()
         {
             List<ArtistsDTO>? artists = new List<ArtistsDTO>();
             try
@@ -78,7 +78,7 @@ namespace prjFruitbar8000WebCore.ApiControllers
         [ProducesResponseType(typeof(ArtistsDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> List(int id)
         {
             ArtistsDTO? artist = await _context.TArtists
             .OrderBy(x => x.FArtistId)
